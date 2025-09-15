@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriPura Coffee - Supply Chain Demo</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* VeriPura Coffee Theme - Coffee & Burlap Colors */
+        :root {
+            --coffee-dark: #3C2415;
+            --coffee-medium: #6F4E37;
+            --coffee-light: #8B4513;
+            --coffee-cream: #D2B48C;
+            --burlap: #DEB887;
+            --coffee-green: #4A5D23;
+            --accent-orange: #D2691E;
+            --gold: #FFD700;
+            --text-dark: #2F1B14;
+            --text-light: #8B4513;
+            --border-light: #D2B48C;
+            --background-cream: #FAF0E6;
+            --success-green: #228B22;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--background-cream) 0%, var(--burlap) 100%);
+            min-height: 100vh;
+        }
+
+        /* Coffee sack texture effect */
+        .coffee-texture::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(139, 69, 19, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(139, 69, 19, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Authentication Styles */
+        .auth-container { 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 2rem; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 15; 
+            background: var(--coffee-dark); 
+        }
+        .auth-container.hide { display: none !important; }
+        .auth-card { 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15); 
+            overflow: hidden; 
+            max-width: 500px; 
+            width: 100%; 
+        }
+        .auth-header { 
+            background: var(--coffee-dark); 
+            color: white; 
+            padding: 2rem; 
+            text-align: center; 
+            position: relative;
+        }
+        .auth-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%);
+            background-size: 30px 30px;
+            opacity: 0.3;
+        }
+        .auth-body { padding: 2rem; }
+
+        /* Brand Styling */
+        .brand-container { text-align: center; position: relative; z-index: 1; }
+        .brand-logo-row { display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+        .company-logo { 
+            width: 48px; 
+            height: 48px; 
+            background: var(--gold); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-right: 15px; 
+            border: 2px solid var(--gold); 
+        }
+        .brand-title { 
+            font-size: 1.75rem; 
+            font-weight: 700; 
+            margin: 0; 
+            letter-spacing: 0.5px; 
+            color: white; 
+        }
+        .brand-tagline { 
+            margin: 0; 
+            font-size: 1rem; 
+            opacity: 0.95; 
+            font-weight: 500; 
+        }
+        .brand-tagline-vietnamese { 
+            margin: 0; 
+            font-size: 0.875rem; 
+            opacity: 0.85; 
+            font-weight: 400; 
+            margin-top: 0.25rem; 
+        }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; }
+        .form-select, .form-control { 
+            border: 2px solid var(--border-light); 
+            border-radius: 10px; 
+            padding: 12px 16px; 
+            transition: all 0.3s ease; 
+        }
+        .form-select:focus, .form-control:focus { 
+            border-color: var(--coffee-green); 
+            box-shadow: 0 0 0 0.2rem rgba(74, 93, 35, 0.25); 
+        }
+        .btn-login { 
+            background: var(--coffee-dark); 
+            border: none; 
+            border-radius: 10px; 
+            padding: 12px 24px; 
+            font-weight: 600; 
+            width: 100%; 
+            transition: all 0.3s ease; 
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container { 
+            display: none !important; 
+            min-height: 100vh; 
+            background: var(--background-cream); 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 5; 
+        }
+        .dashboard-container.show { display: flex !important; }
+        .sidebar { 
+            background: linear-gradient(180deg, var(--coffee-dark), var(--coffee-medium)); 
+            width: 280px; 
+            height: 100vh; 
+            border-right: 1px solid var(--border-light); 
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05); 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+        }
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 25px 25px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative; z-index: 1; }
+        .company-info { display: flex; align-items: center; margin-bottom: 1rem; }
+        .sidebar .company-logo { 
+            width: 40px; 
+            height: 40px; 
+            background: var(--gold); 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: var(--coffee-dark); 
+            font-weight: bold; 
+            margin-right: 12px; 
+        }
+        .user-info h6 { font-weight: 600; color: white; margin: 0; }
+        .user-info small { color: rgba(255, 255, 255, 0.7); }
+
+        /* Navigation */
+        .nav-menu { padding: 0.5rem 0; margin-top: -1rem; position: relative; z-index: 1; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 1.5rem; 
+            color: rgba(255, 255, 255, 0.8); 
+            text-decoration: none; 
+            transition: all 0.3s ease; 
+            border-left: 3px solid transparent; 
+        }
+        .nav-link:hover, .nav-link.active { 
+            background: rgba(255, 255, 255, 0.1); 
+            color: white; 
+            border-left-color: var(--coffee-green); 
+        }
+        .nav-link i { margin-right: 12px; width: 20px; }
+
+        /* Main Content */
+        .main-content { 
+            flex: 1; 
+            padding: 1.5rem 2rem 2rem 2rem; 
+            overflow-y: auto; 
+            height: 100vh; 
+        }
+
+        /* Page Header */
+        .page-header { margin-bottom: 2rem; margin-top: 0.5rem; }
+        .page-title { 
+            font-size: 1.75rem; 
+            font-weight: 700; 
+            color: var(--text-dark); 
+            margin: 0; 
+        }
+
+        /* Stats Cards */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 1.5rem; 
+            margin-bottom: 2rem; 
+        }
+        .stat-card { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 1.5rem; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+            border: 1px solid var(--border-light); 
+            position: relative;
+        }
+        .stat-icon { 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 1rem; 
+            font-size: 1.25rem; 
+        }
+        .stat-value { 
+            font-size: 2rem; 
+            font-weight: 700; 
+            color: var(--text-dark); 
+            margin: 0; 
+        }
+        .stat-label { 
+            color: var(--text-light); 
+            font-size: 0.875rem; 
+            margin: 0; 
+        }
+
+        /* Content Cards */
+        .content-card { 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+            border: 1px solid var(--border-light); 
+            overflow: hidden; 
+            margin-bottom: 1.5rem;
+        }
+        .card-header { 
+            padding: 1.5rem; 
+            border-bottom: 1px solid var(--border-light); 
+            background: var(--background-cream); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .card-title { 
+            font-size: 1.25rem; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+            margin: 0; 
+        }
+
+        /* VERI Token Widget */
+        .veri-balance-widget { 
+            background: linear-gradient(135deg, var(--coffee-light), var(--coffee-dark)); 
+            position: relative; 
+            overflow: hidden;
+        }
+        .veri-bg-animation { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), 
+                       linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%); 
+            background-size: 20px 20px; 
+            animation: veri-bg-slide 20s linear infinite; 
+            opacity: 0.3; 
+        }
+        @keyframes veri-bg-slide { 
+            0% { background-position: 0 0, 0 10px; } 
+            100% { background-position: 20px 20px, 20px 30px; } 
+        }
+
+        /* Buttons */
+        .btn-create-po { 
+            background: linear-gradient(135deg, var(--coffee-green), var(--success-green)); 
+            border: none; 
+            border-radius: 10px; 
+            padding: 12px 24px; 
+            font-weight: 600; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s ease; 
+        }
+        .btn-create-po:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 20px rgba(74, 93, 35, 0.4); 
+            color: white; 
+        }
+
+        /* Status Badges */
+        .status-badge { 
+            font-size: 0.75rem; 
+            padding: 0.25rem 0.75rem; 
+            border-radius: 12px; 
+            font-weight: 600; 
+        }
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-active { background: #DBEAFE; color: #1E40AF; }
+        .status-processing { background: #FEF3C7; color: #92400E; }
+        .status-completed { background: #D1FAE5; color: #065F46; }
+        .status-testing { background: #F3E8FF; color: #6B21A8; }
+
+        /* Threaded Purchase Order Styles */
+        .threaded-order {
+            border-bottom: 1px solid var(--border-light);
+        }
+        .threaded-order:last-child {
+            border-bottom: none;
+        }
+        
+        .order-row {
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .order-row:hover {
+            background-color: rgba(74, 93, 35, 0.05);
+        }
+        
+        .order-summary {
+            flex: 1;
+        }
+        .order-id {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .order-meta {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        .order-status {
+            margin-left: 1rem;
+        }
+        .order-chevron {
+            margin-left: 1rem;
+            color: var(--text-light);
+        }
+        .order-chevron i {
+            transition: transform 0.3s ease;
+        }
+        .order-chevron i.expanded {
+            transform: rotate(180deg);
+        }
+        
+        .order-details {
+            background: var(--background-cream);
+            border-top: 1px solid var(--border-light);
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .order-details.expanded {
+            max-height: 800px;
+            padding: 1.5rem;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+        .detail-value {
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .cert-badge {
+            background: var(--coffee-green);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            display: inline-block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .section-chevron {
+            transition: transform 0.3s ease;
+        }
+        .section-chevron.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* Testing Modal */
+        .testing-modal .modal-dialog { max-width: 800px; }
+        .test-type-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 1.5rem; 
+            margin-bottom: 2rem; 
+        }
+        .test-card { 
+            border: 2px solid var(--border-light); 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        .test-card:hover { 
+            border-color: var(--coffee-green); 
+            box-shadow: 0 4px 12px rgba(74, 93, 35, 0.1); 
+        }
+        .test-card.selected { 
+            border-color: var(--coffee-green); 
+            background: rgba(74, 93, 35, 0.05); 
+        }
+        .test-card h6 { 
+            color: var(--text-dark); 
+            font-weight: 600; 
+            margin-bottom: 0.75rem; 
+            display: flex; 
+            align-items: center; 
+        }
+        .test-card .test-icon { 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-right: 0.75rem; 
+            font-size: 0.875rem; 
+        }
+        .test-card.quality-test .test-icon { 
+            background: linear-gradient(135deg, var(--coffee-medium), var(--coffee-dark)); 
+            color: white; 
+        }
+        .test-card.origin-test .test-icon { 
+            background: linear-gradient(135deg, var(--coffee-green), var(--success-green)); 
+            color: white; 
+        }
+        .test-card.moisture-test .test-icon { 
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8); 
+            color: white; 
+        }
+
+        /* Enhanced Purchase Order Styles */
+        .traceability-option { 
+            border: 2px solid var(--border-light); 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            height: 100%; 
+        }
+        .traceability-option:hover { 
+            border-color: var(--coffee-green); 
+            box-shadow: 0 4px 12px rgba(74, 93, 35, 0.1); 
+        }
+        .traceability-option.selected { 
+            border-color: var(--coffee-green); 
+            background: rgba(74, 93, 35, 0.05); 
+        }
+        .premium-option { 
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(255, 215, 0, 0.1)); 
+            border-color: var(--gold); 
+        }
+        .premium-option:hover { 
+            border-color: var(--accent-orange); 
+            box-shadow: 0 4px 15px rgba(210, 105, 30, 0.2); 
+        }
+        .premium-option.selected { 
+            border-color: var(--accent-orange); 
+            background: linear-gradient(135deg, rgba(210, 105, 30, 0.1), rgba(255, 215, 0, 0.1)); 
+        }
+        
+        .natural-trace-benefits { 
+            border-top: 1px solid rgba(139, 69, 19, 0.2); 
+            padding-top: 0.75rem; 
+        }
+        
+        .certification-check { 
+            border: 1px solid var(--border-light); 
+            border-radius: 8px; 
+            padding: 1rem; 
+            transition: all 0.3s ease; 
+            height: 100%; 
+        }
+        .certification-check:hover { 
+            border-color: var(--coffee-green); 
+            background: rgba(74, 93, 35, 0.02); 
+        }
+        .certification-check input:checked + label { 
+            color: var(--coffee-dark); 
+        }
+        
+        .cost-summary-card, .roi-summary-card { 
+            background: var(--background-cream); 
+            border: 1px solid var(--border-light); 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            height: 100%; 
+        }
+        .roi-summary-card { 
+            background: linear-gradient(135deg, rgba(34, 139, 34, 0.05), rgba(74, 93, 35, 0.05)); 
+        }
+        
+        .cost-line { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 0.5rem; 
+            padding: 0.25rem 0; 
+        }
+        .cost-line.total-cost { 
+            border-top: 2px solid var(--coffee-green); 
+            padding-top: 0.75rem; 
+            margin-top: 0.5rem; 
+        }
+        
+        .benefit-line { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 0.75rem; 
+            padding: 0.5rem 0; 
+        }
+
+        /* Modal Styles */
+        .modal-content { border-radius: 15px; border: none; }
+        .modal-header { 
+            background: var(--coffee-dark); 
+            color: white; 
+            border-radius: 15px 15px 0 0; 
+        }
+
+        /* Toast Notifications */
+        .toast-container { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 1055; 
+        }
+        .toast { 
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); 
+        }
+
+        /* Floating Token Counter */
+        .floating-token-counter { 
+            position: fixed; 
+            top: auto;
+            bottom: 20px; 
+            right: 20px; 
+            z-index: 1050; 
+            background: linear-gradient(135deg, var(--coffee-light), var(--coffee-dark)); 
+            border-radius: 50px; 
+            padding: 0.75rem 1.25rem; 
+            box-shadow: 0 4px 20px rgba(139, 69, 19, 0.4); 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            border: 2px solid rgba(255,255,255,0.3); 
+        }
+        .floating-token-counter:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 25px rgba(139, 69, 19, 0.6); 
+        }
+
+        /* Sample Info Form */
+        .sample-info-form { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 1rem; 
+            margin-bottom: 2rem; 
+            padding: 1.5rem; 
+            background: var(--background-cream); 
+            border-radius: 12px; 
+        }
+
+        /* Modal Enhancements */
+        .modal-xl { max-width: 1200px; }
+        .enhanced-po-modal .modal-body { max-height: 70vh; overflow-y: auto; }
+
+        /* Action Buttons in Order Details */
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        /* Thread Messages */
+        .thread-messages {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+        }
+        .thread-message {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .thread-message .message-author {
+            font-weight: 600;
+            color: var(--coffee-dark);
+            margin-bottom: 0.25rem;
+        }
+        .thread-message .message-time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-left: 0.5rem;
+        }
+
+        /* CSS Classes for JavaScript toggles */
+        .hidden { display: none !important; }
+        .premium-dimmed { opacity: 0.45; filter: grayscale(0.25); }
+
+        /* Hide "Create New Order" for cooperatives only */
+        body[data-org-type="cooperative"] #dashboardSection .btn-create-po,
+        body[data-org-type="cooperative"] #ordersSection .btn-create-po {
+            display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; min-height: auto; }
+            .dashboard-container { flex-direction: column; }
+            .main-content { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .test-type-grid { grid-template-columns: 1fr; }
+            .sample-info-form { grid-template-columns: 1fr; }
+            .modal-xl { max-width: 95%; }
+            .cost-summary-card, .roi-summary-card { margin-bottom: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Company Authentication Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header coffee-texture">
+                <div class="brand-container">
+                    <div class="brand-logo-row">
+                        <div class="company-logo">
+                            <i class="fas fa-coffee text-white fs-4"></i>
+                        </div>
+                        <h1 class="brand-title">VeriPura</h1>
+                    </div>
+                    <p class="brand-tagline">Drink only the Purest</p>
+                    <p class="brand-tagline-vietnamese">Chỉ uống cà phê tinh khiết nhất</p>
+                </div>
+            </div>
+            <div class="auth-body">
+                <form id="authForm">
+                    <div class="form-group">
+                        <label for="company" class="form-label">Select Organization</label>
+                        <select id="company" class="form-select" required>
+                            <option value="">Choose your organization...</option>
+                            <option value="highland-cooperative">Highland Coffee Cooperative</option>
+                            <option value="mekong-coffee">Mekong Coffee Cooperative</option>
+                            <option value="vietnam-exports">Vietnam Premium Coffee Exports</option>
+                            <option value="specialty-roasters">Specialty Coffee Roasters Inc.</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="Enter organization password" required>
+                        <small class="text-muted">Hint: 123</small>
+                    </div>
+
+                    <button type="submit" id="authBtn" class="btn btn-login text-white">
+                        <i class="fas fa-sign-in-alt me-2"></i>Authenticate
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="company-info">
+                    <div class="company-logo" id="companyLogo">V</div>
+                    <div class="user-info">
+                        <h6 id="userName">User Name</h6>
+                        <small id="userRole">Role</small>
+                    </div>
+                </div>
+                
+                <!-- VERI Token Balance Display -->
+                <div class="veri-balance-widget mt-3 p-3 bg-gradient rounded position-relative overflow-hidden">
+                    <div class="veri-bg-animation"></div>
+                    <div class="position-relative">
+                        <div class="d-flex align-items-center justify-content-between text-white mb-2">
+                            <div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-coins me-2"></i>
+                                    <span class="fw-bold">VERI Wallet</span>
+                                </div>
+                                <div class="h4 mb-0 fw-bold" id="veriBalance">0</div>
+                            </div>
+                        </div>
+                        <div class="row text-white">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold" id="veriTotalEarned">0</div>
+                                    <small class="opacity-75" style="font-size: 0.75rem;">Total Earned</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold" id="veriMonthlyEarnings">0</div>
+                                    <small class="opacity-75" style="font-size: 0.75rem;">This Month</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline-light btn-sm w-100 mt-3" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item">
+                    <a href="#" class="nav-link active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-section="quality">
+                        <i class="fas fa-flask"></i>Quality Testing
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-section="orders">
+                        <i class="fas fa-shipping-fast"></i>Purchase Orders
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Coffee Supply Chain Dashboard</h1>
+                    <p class="text-muted">Real-time overview of your coffee supply chain operations</p>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats populated by JavaScript -->
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activity</h3>
+                        <button class="btn btn-create-po" onclick="createNewOrder()">
+                            <i class="fas fa-plus"></i>Create New Order
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="recentActivityTable">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Coffee Type</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Testing Section -->
+            <div id="qualitySection" class="content-section" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Coffee Quality Testing</h1>
+                    <p class="text-muted">Comprehensive quality assurance for coffee beans</p>
+                </div>
+
+                <div class="stats-grid mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, var(--coffee-green), var(--success-green));">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3 class="stat-value">94.8%</h3>
+                        <p class="stat-label">Quality Pass Rate</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, var(--coffee-medium), var(--coffee-dark));">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <h3 class="stat-value" id="totalTestsCount">15</h3>
+                        <p class="stat-label">Tests This Month</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-orange), var(--coffee-light));">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <h3 class="stat-value">3</h3>
+                        <p class="stat-label">Certified Labs</p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Request Quality Testing</h3>
+                        <small class="text-muted">Professional coffee quality assessment</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-success w-100" onclick="openTestingModal('quality')">
+                                    <i class="fas fa-star me-2"></i>
+                                    Quality Grading
+                                    <br><small>SCA cupping protocol</small>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100" onclick="openTestingModal('moisture')">
+                                    <i class="fas fa-tint me-2"></i>
+                                    Moisture Content
+                                    <br><small>Storage readiness</small>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-warning w-100" onclick="openTestingModal('origin')">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    Origin Verification
+                                    <br><small>Traceability assurance</small>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>Recent Test Results</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm" id="recentTestsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Test ID</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Score</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Recent tests populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase Orders Section with Threaded Display -->
+            <div id="ordersSection" class="content-section" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="page-title">Purchase Orders</h1>
+                        <p class="text-muted">Coffee supply chain order management</p>
+                    </div>
+                    <button class="btn btn-create-po" onclick="createNewOrder()">
+                        <i class="fas fa-plus"></i>Create New Order
+                    </button>
+                </div>
+
+                <!-- First Orders Section (Sent/Issued) -->
+                <div class="content-card">
+                    <div class="card-header" style="cursor: pointer;" onclick="toggleSection('first')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="card-title" id="firstSectionTitle">
+                                <i class="fas fa-paper-plane me-2 text-success"></i>
+                                <span id="firstSectionLabel">Sent Purchase Orders</span>
+                                <span class="badge bg-success ms-2" id="firstOrderCount">0</span>
+                            </h3>
+                            <i class="fas fa-chevron-down section-chevron" id="firstChevron"></i>
+                        </div>
+                    </div>
+                    <div id="firstOrdersContent">
+                        <div id="firstOrdersList">
+                            <!-- First section orders populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Orders Section (Received) -->
+                <div class="content-card">
+                    <div class="card-header" style="cursor: pointer;" onclick="toggleSection('second')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="card-title">
+                                <i class="fas fa-inbox me-2 text-primary"></i>
+                                Received Purchase Orders
+                                <span class="badge bg-primary ms-2" id="secondOrderCount">0</span>
+                            </h3>
+                            <i class="fas fa-chevron-down section-chevron" id="secondChevron"></i>
+                        </div>
+                    </div>
+                    <div id="secondOrdersContent">
+                        <div id="secondOrdersList">
+                            <!-- Second section orders populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Purchase Order Modal -->
+    <div class="modal fade" id="enhancedPOModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart me-2"></i>Create Purchase Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Basic Order Information -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Order Details</h6>
+                        <div class="sample-info-form">
+                            <div class="form-group">
+                                <label class="form-label">Supplier</label>
+                                <select id="poSupplier" class="form-select">
+                                    <option value="">Select supplier...</option>
+                                    <option value="highland-cooperative">Highland Coffee Cooperative</option>
+                                    <option value="mekong-coffee">Mekong Coffee Cooperative</option>
+                                    <option value="vietnam-exports">Vietnam Premium Coffee Exports</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Coffee Variety</label>
+                                <select id="poVariety" class="form-select">
+                                    <option value="">Select variety...</option>
+                                    <option value="Arabica Typica">Arabica Typica</option>
+                                    <option value="Arabica Bourbon">Arabica Bourbon</option>
+                                    <option value="Arabica Caturra">Arabica Caturra</option>
+                                    <option value="Robusta">Robusta</option>
+                                    <option value="Catimor">Catimor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Quantity (kg)</label>
+                                <input type="number" id="poQuantity" class="form-control" placeholder="500" min="100" step="50" onchange="updatePOPricing()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Base Price ($/kg)</label>
+                                <input type="number" id="poBasePrice" class="form-control" placeholder="5.50" step="0.10" min="3.00" onchange="updatePOPricing()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Delivery Date</label>
+                                <input type="date" id="poDeliveryDate" class="form-control" onchange="updateDeliveryPremium()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Traceability Method Selection -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Traceability Method</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="traceability-option" onclick="selectTraceabilityMethod('standard')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="traceabilityMethod" id="standardTrace" value="standard" onchange="updatePOPricing()">
+                                        <label class="form-check-label" for="standardTrace">
+                                            <strong>Standard Batch Tracking</strong>
+                                        </label>
+                                    </div>
+                                    <div class="traceability-details mt-2">
+                                        <p class="text-muted mb-1">Digital lot tracking and documentation</p>
+                                        <p class="text-success mb-0"><strong>Base pricing</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="traceability-option premium-option" onclick="selectTraceabilityMethod('natural')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="traceabilityMethod" id="naturalTrace" value="natural" onchange="updatePOPricing()">
+                                        <label class="form-check-label" for="naturalTrace">
+                                            <strong>Natural Trace Molecular Verification</strong>
+                                            <span class="badge bg-warning text-dark ms-2">PREMIUM</span>
+                                        </label>
+                                    </div>
+                                    <div class="traceability-details mt-2">
+                                        <p class="text-muted mb-1">Molecular fingerprinting with NaturalTag technology</p>
+                                        <p class="text-warning mb-0"><strong>+15% premium pricing</strong></p>
+                                        <div class="natural-trace-benefits mt-2">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <i class="fas fa-shield-alt text-success me-2"></i>
+                                                <small>Fraud prevention & authenticity guarantee</small>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-1">
+                                                <i class="fas fa-search text-primary me-2"></i>
+                                                <small>Rapid recall capability</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-award text-warning me-2"></i>
+                                                <small>Consumer traceability marketing</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certification Requirements -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Certification Requirements</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="form-check certification-check">
+                                    <input class="form-check-input" type="checkbox" id="organicCert" onchange="updatePOPricing()">
+                                    <label class="form-check-label" for="organicCert">
+                                        <strong>Organic Certified</strong>
+                                        <br><small class="text-muted">USDA/EU Organic</small>
+                                        <br><small class="text-warning">+$0.50/kg</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check certification-check">
+                                    <input class="form-check-input" type="checkbox" id="fairtradeCert" onchange="updatePOPricing()">
+                                    <label class="form-check-label" for="fairtradeCert">
+                                        <strong>Fair Trade</strong>
+                                        <br><small class="text-muted">Fair Trade USA</small>
+                                        <br><small class="text-warning">+$0.25/kg</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check certification-check">
+                                    <input class="form-check-input" type="checkbox" id="eudrCert" onchange="updatePOPricing()">
+                                    <label class="form-check-label" for="eudrCert">
+                                        <strong>EUDR Compliant</strong>
+                                        <br><small class="text-muted">Deforestation-free</small>
+                                        <br><small class="text-warning">+$0.30/kg</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check certification-check">
+                                    <input class="form-check-input" type="checkbox" id="rainforestCert" onchange="updatePOPricing()">
+                                    <label class="form-check-label" for="rainforestCert">
+                                        <strong>Rainforest Alliance</strong>
+                                        <br><small class="text-muted">Sustainability certified</small>
+                                        <br><small class="text-warning">+$0.20/kg</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROI Calculator -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Cost-Benefit Analysis</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="cost-summary-card">
+                                    <h6 class="text-primary">Order Summary</h6>
+                                    <div class="cost-line">
+                                        <span>Base Cost:</span>
+                                        <span id="baseCostDisplay">$0</span>
+                                    </div>
+                                    <div class="cost-line">
+                                        <span>Traceability Premium:</span>
+                                        <span id="traceabilityPremiumDisplay">$0</span>
+                                    </div>
+                                    <div class="cost-line">
+                                        <span>Certification Premiums:</span>
+                                        <span id="certificationPremiumDisplay">$0</span>
+                                    </div>
+                                    <div class="cost-line">
+                                        <span>Delivery Premium:</span>
+                                        <span id="deliveryPremiumDisplay">$0</span>
+                                    </div>
+                                    <hr>
+                                    <div class="cost-line total-cost">
+                                        <span><strong>Total Order Value:</strong></span>
+                                        <span id="totalCostDisplay"><strong>$0</strong></span>
+                                    </div>
+                                    <div class="cost-line">
+                                        <span>VERI Tokens Required:</span>
+                                        <span id="veriCostDisplay" class="text-warning"><strong>0 VERI</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="roi-summary-card">
+                                    <h6 class="text-success">ROI Benefits</h6>
+                                    <div id="roiBenefits">
+                                        <div class="benefit-line">
+                                            <i class="fas fa-chart-line text-success me-2"></i>
+                                            <span>Brand premium potential: <strong>+20-35%</strong></span>
+                                        </div>
+                                        <div class="benefit-line">
+                                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                                            <span>Fraud protection value: <strong>$2,000-5,000</strong></span>
+                                        </div>
+                                        <div class="benefit-line">
+                                            <i class="fas fa-users text-warning me-2"></i>
+                                            <span>Consumer trust boost: <strong>+25% loyalty</strong></span>
+                                        </div>
+                                        <div class="benefit-line">
+                                            <i class="fas fa-clock text-info me-2"></i>
+                                            <span>Recall time reduction: <strong>98% faster</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Contract Simulation -->
+                    <div class="alert alert-info" id="smartContractInfo">
+                        <h6><i class="fas fa-robot me-2"></i>Smart Contract Execution</h6>
+                        <div id="contractTerms">
+                            <p class="mb-1">Automatic payment release upon: Quality verification ✓ Natural Trace confirmation ✓ Delivery confirmation ✓</p>
+                            <p class="mb-0">Estimated processing time: <span class="fw-bold">2-3 business days</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitPurchaseOrder()" style="background: var(--coffee-dark); border-color: var(--coffee-dark);">
+                        <i class="fas fa-shopping-cart me-2"></i>Create Purchase Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coffee Testing Modal -->
+    <div class="modal fade testing-modal" id="coffeeTestModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-flask me-2"></i>Coffee Quality Testing
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Test Type Selection -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Select Test Type</h6>
+                        <div class="test-type-grid" id="testTypeGrid">
+                            <!-- Test cards populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Sample Information Form -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Sample Information</h6>
+                        <div class="sample-info-form">
+                            <div class="form-group">
+                                <label class="form-label">Lot ID</label>
+                                <input type="text" id="lotId" class="form-control" placeholder="e.g., COF-2025-0821-01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Coffee Variety</label>
+                                <select id="variety" class="form-select">
+                                    <option value="">Select variety...</option>
+                                    <option value="Arabica Typica">Arabica Typica</option>
+                                    <option value="Arabica Bourbon">Arabica Bourbon</option>
+                                    <option value="Arabica Caturra">Arabica Caturra</option>
+                                    <option value="Robusta">Robusta</option>
+                                    <option value="Catimor">Catimor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Sample Size (kg)</label>
+                                <input type="number" id="sampleSize" class="form-control" placeholder="5.0" step="0.5" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Processing Method</label>
+                                <select id="processing" class="form-select">
+                                    <option value="washed">Washed</option>
+                                    <option value="natural">Natural</option>
+                                    <option value="honey">Honey Process</option>
+                                    <option value="wet-hulled">Wet Hulled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Harvest Date</label>
+                                <input type="date" id="harvestDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Farm Origin</label>
+                                <input type="text" id="farmOrigin" class="form-control" placeholder="e.g., Da Lat Highlands">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Summary -->
+                    <div class="alert alert-info" id="testCostSummary">
+                        <h6><i class="fas fa-calculator me-2"></i>Testing Cost</h6>
+                        <div id="costBreakdown">
+                            <p class="mb-1">Base testing cost: <span class="fw-bold" id="baseCost">30-45 VERI</span></p>
+                            <p class="mb-0">Estimated turnaround: <span class="fw-bold">2-3 business days</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitTestRequest()" style="background: var(--coffee-dark); border-color: var(--coffee-dark);">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Test Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Token Counter -->
+    <div class="floating-token-counter" id="floatingTokenCounter">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-coins text-warning me-2"></i>
+            <span id="floatingTokenCount">0</span>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // VeriPura Coffee Demo Data
+        window.VeriPuraCoffeeData = {
+            companies: {
+                'highland-cooperative': { 
+                    id: 'highland-cooperative', 
+                    name: 'Highland Coffee Cooperative', 
+                    type: 'cooperative', 
+                    password: '123' 
+                },
+                'mekong-coffee': { 
+                    id: 'mekong-coffee', 
+                    name: 'Mekong Coffee Cooperative', 
+                    type: 'cooperative', 
+                    password: '123' 
+                },
+                'vietnam-exports': { 
+                    id: 'vietnam-exports', 
+                    name: 'Vietnam Premium Coffee Exports', 
+                    type: 'exporter', 
+                    password: '123' 
+                },
+                'specialty-roasters': { 
+                    id: 'specialty-roasters', 
+                    name: 'Specialty Coffee Roasters Inc.', 
+                    type: 'roaster', 
+                    password: '123' 
+                }
+            },
+            testProtocols: {
+                quality: { 
+                    name: 'Quality Grading', 
+                    icon: 'fas fa-star', 
+                    description: 'SCA cupping score and defect analysis', 
+                    baseCost: { min: 30, max: 45 } 
+                },
+                moisture: { 
+                    name: 'Moisture Content', 
+                    icon: 'fas fa-tint', 
+                    description: 'Moisture level for storage stability', 
+                    baseCost: { min: 20, max: 30 } 
+                },
+                origin: { 
+                    name: 'Origin Verification', 
+                    icon: 'fas fa-map-marker-alt', 
+                    description: 'Geographic and processing verification', 
+                    baseCost: { min: 40, max: 55 } 
+                }
+            },
+            testRequests: [],
+            veriBalances: {
+                'highland-cooperative': { currentBalance: 1240, totalEarned: 1850, monthlyEarnings: 280 },
+                'mekong-coffee': { currentBalance: 980, totalEarned: 1420, monthlyEarnings: 220 },
+                'vietnam-exports': { currentBalance: 2150, totalEarned: 2890, monthlyEarnings: 450 },
+                'specialty-roasters': { currentBalance: 1680, totalEarned: 2340, monthlyEarnings: 380 }
+            },
+            orders: [
+                {
+                    id: 'CF-2025-001',
+                    from: 'Highland Coffee Cooperative',
+                    to: 'Vietnam Premium Coffee Exports',
+                    variety: 'Arabica Typica',
+                    quantity: '500 kg',
+                    price: '$2,750',
+                    status: 'active',
+                    created: '2025-08-15',
+                    delivery: '2025-09-01',
+                    traceabilityMethod: 'Standard',
+                    certifications: ['Organic'],
+                    thread: [
+                        { author: 'Highland Coffee Cooperative', msg: 'Order created for 500kg Arabica Typica with Organic certification', ts: '2025-08-15 09:30' },
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order confirmed. Processing will begin Monday.', ts: '2025-08-15 14:20' },
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Quality testing scheduled for batch validation', ts: '2025-08-16 08:15' }
+                    ]
+                },
+                {
+                    id: 'CF-2025-002',
+                    from: 'Vietnam Premium Coffee Exports',
+                    to: 'Specialty Coffee Roasters Inc.',
+                    variety: 'Arabica Bourbon',
+                    quantity: '300 kg',
+                    price: '$2,100',
+                    status: 'testing',
+                    created: '2025-08-18',
+                    delivery: '2025-09-05',
+                    traceabilityMethod: 'Natural Trace',
+                    certifications: ['Fair Trade', 'EUDR'],
+                    thread: [
+                        { author: 'Specialty Coffee Roasters Inc.', msg: 'Purchase order submitted with Natural Trace verification requirement', ts: '2025-08-18 11:00' },
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order received. NaturalTag application initiated.', ts: '2025-08-18 15:30' },
+                        { author: 'VeriPura Labs', msg: 'Natural Trace molecular verification in progress', ts: '2025-08-19 10:00' }
+                    ]
+                },
+                {
+                    id: 'CF-2025-003',
+                    from: 'Specialty Coffee Roasters Inc.',
+                    to: 'Vietnam Premium Coffee Exports',
+                    variety: 'Arabica Caturra',
+                    quantity: '750 kg',
+                    price: '$4,125',
+                    status: 'pending',
+                    created: '2025-08-20',
+                    delivery: '2025-09-15',
+                    traceabilityMethod: 'Natural Trace',
+                    certifications: ['Organic', 'EUDR'],
+                    thread: [
+                        { author: 'Specialty Coffee Roasters Inc.', msg: 'Large order placed for Arabica Caturra with premium certifications', ts: '2025-08-20 16:45' },
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order under review. Checking available inventory.', ts: '2025-08-21 09:00' }
+                    ]
+                }
+            ]
+        };
+
+        // --- PO flow & helpers ---
+        const ALLOWED_TARGETS = {
+            roaster: ['exporter'],      // Roaster can only send POs to Exporters
+            exporter: ['cooperative'],  // Exporter can only send POs to Cooperatives
+            cooperative: []             // Cooperative cannot send POs
+        };
+
+        function getCompanyById(id){ return window.VeriPuraCoffeeData.companies[id]; }
+        function getCompanyByName(name){
+            return Object.values(window.VeriPuraCoffeeData.companies).find(c => c.name === name);
+        }
+        function getCompanyTypeByName(name){
+            const c = getCompanyByName(name);
+            return c ? c.type : undefined;
+        }
+
+        function normalizeSeedOrders() {
+            const byName = Object.fromEntries(Object.values(window.VeriPuraCoffeeData.companies).map(c => [c.name, c]));
+            (window.VeriPuraCoffeeData.orders || []).forEach(o => {
+                const fromType = byName[o.from]?.type;
+                const toType   = byName[o.to]?.type;
+                const ok       = ALLOWED_TARGETS[fromType]?.includes(toType);
+                if (ok) return;
+
+                // If reversing makes it valid, swap from/to
+                const reverseOk = ALLOWED_TARGETS[toType]?.includes(fromType);
+                if (reverseOk) {
+                    const tmp = o.from; o.from = o.to; o.to = tmp;
+                } else {
+                    o.status = 'invalid';
+                }
+            });
+
+            // Drop invalids from dashboard/orders renders
+            window.VeriPuraCoffeeData.orders = window.VeriPuraCoffeeData.orders.filter(o => o.status !== 'invalid');
+        }
+
+        // Helper functions
+        function safeDataAccess() {
+            const d = (window.VeriPuraCoffeeData = window.VeriPuraCoffeeData || {});
+            d.testRequests = Array.isArray(d.testRequests) ? d.testRequests : [];
+            d.naturalTagApplications = Array.isArray(d.naturalTagApplications) ? d.naturalTagApplications : [];
+            d.naturalDetectVerifications = Array.isArray(d.naturalDetectVerifications) ? d.naturalDetectVerifications : [];
+            d.orders = Array.isArray(d.orders) ? d.orders : [];
+            d.veriBalances = d.veriBalances || {};
+            d.testProtocols = d.testProtocols || {};
+        }
+        const ICONS = {
+            quality: 'fas fa-star',
+            moisture: 'fas fa-tint',
+            origin: 'fas fa-map-marker-alt',
+            naturaltag: 'fas fa-dna',
+            naturaldetect: 'fas fa-flask'
+        };
+        function escapeHTML(s) {
+            return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+        }
+
+        // Who this org can issue POs to
+        function allowedTargetsForCurrent() {
+            const t = currentUser?.company?.type;
+            return ALLOWED_TARGETS[t] ? ALLOWED_TARGETS[t].slice() : [];
+        }
+
+        // Rebuild supplier list based on allowed partner types
+        function buildSupplierOptions() {
+            const sel = document.getElementById('poSupplier');
+            if (!sel || !currentUser) return;
+            const allowed = allowedTargetsForCurrent();
+            const meId = currentUser.company.id;
+            const companies = window.VeriPuraCoffeeData.companies;
+
+            sel.innerHTML = '<option value="">Select supplier...</option>' +
+                Object.values(companies)
+                    .filter(c => c.id !== meId && allowed.includes(c.type))
+                    .map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`)
+                    .join('');
+        }
+
+        // Compute priceCents if missing; keep existing price text as-is
+        function normalizePriceCents() {
+            (window.VeriPuraCoffeeData.orders || []).forEach(o => {
+                if (typeof o.priceCents !== 'number' || !Number.isFinite(o.priceCents)) {
+                    const n = parseFloat(String(o.price ?? '').replace(/[^\d.]/g, ''));
+                    if (!isNaN(n)) o.priceCents = Math.round(n * 100);
+                }
+            });
+        }
+
+        // No-op persistence to satisfy existing calls
+        function saveState() { /* intentionally empty */ }
+
+        // Add a thread message from the current user
+        function addOrderMessage(orderId) {
+            const order = (window.VeriPuraCoffeeData.orders || []).find(o => o.id === orderId);
+            if (!order) return;
+            const msg = prompt('Add a message to the thread:');
+            if (!msg) return;
+            (order.thread = order.thread || []).push({
+                author: currentUser?.company?.name || 'User',
+                msg,
+                ts: new Date().toLocaleString()
+            });
+            loadOrders();
+            // keep the order expanded
+            setTimeout(() => {
+                const details = document.getElementById(`details-${orderId}`);
+                if (details && !details.classList.contains('expanded')) toggleOrderDetails(orderId);
+            }, 0);
+        }
+
+        // Initialize data safety immediately after definition
+        safeDataAccess();
+
+        let currentUser = null;
+        let selectedTestType = null;
+        let navBound = false;
+
+        // Authentication
+        function handleAuth(event) {
+            event.preventDefault();
+            const companyId = document.getElementById('company').value;
+            const password = document.getElementById('password').value;
+            
+            if (!companyId || !password) {
+                showNotification('error', 'Authentication Failed', 'Please select an organization and enter password');
+                return;
+            }
+            
+            const company = window.VeriPuraCoffeeData.companies[companyId];
+            if (company && company.password === password) {
+                currentUser = { company: company, role: { name: 'Demo User' } };
+                showDashboard();
+            } else {
+                showNotification('error', 'Authentication Failed', 'Invalid credentials. Hint: 123');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('authScreen').classList.add('hide');
+            document.getElementById('dashboardScreen').classList.add('show');
+            
+            document.getElementById('userName').textContent = currentUser.company.name;
+            document.getElementById('companyLogo').textContent = currentUser.company.name.charAt(0);
+            
+            // Set org type for CSS targeting
+            document.body.setAttribute('data-org-type', currentUser.company.type);
+            
+            loadVeriBalance();
+            loadDashboardStats();
+            loadRecentActivity();
+            setupNavigation();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('dashboardScreen').classList.remove('show');
+            document.getElementById('authScreen').classList.remove('hide');
+            document.getElementById('authForm').reset();
+            
+            // Clean up org type attribute
+            document.body.removeAttribute('data-org-type');
+            
+            // Reset nav highlight to Dashboard
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelector('.nav-link[data-section="dashboard"]').classList.add('active');
+            showSection('dashboard');
+        }
+
+        // Navigation
+        function setupNavigation() {
+            if (navBound) return;
+            navBound = true;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    showSection(this.getAttribute('data-section'));
+                });
+            });
+        }
+
+        function showSection(sectionName) {
+            document.querySelectorAll('.content-section').forEach(section => section.style.display = 'none');
+            const targetSection = document.getElementById(sectionName + 'Section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                if (sectionName === 'orders') {
+                    // Disable/enable create button based on role permissions
+                    const btns = targetSection.querySelectorAll('.btn-create-po');
+                    const canIssue = allowedTargetsForCurrent().length > 0;
+                    btns.forEach(b => {
+                        b.disabled = !canIssue;
+                        b.title = canIssue ? '' : 'Your organization type cannot issue purchase orders.';
+                    });
+                    loadOrders();
+                }
+                if (sectionName === 'quality') loadRecentTests();
+            }
+        }
+
+        // Dashboard Stats
+        function loadDashboardStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const meId = currentUser?.company?.id;
+            const meName = currentUser?.company?.name;
+
+            const activeOrders = window.VeriPuraCoffeeData.orders
+                .filter(o => (o.from === meName || o.to === meName) && o.status !== 'completed')
+                .length;
+
+            const balance = window.VeriPuraCoffeeData.veriBalances[meId]?.currentBalance || 0;
+
+            const stats = [
+                { 
+                    icon: 'fa-solid fa-coffee',
+                    value: String(activeOrders),
+                    label: 'Active Orders',
+                    color: 'linear-gradient(135deg, var(--coffee-medium), var(--coffee-dark))'
+                },
+                { 
+                    icon: 'fa-solid fa-chart-line',
+                    value: '94.8%',
+                    label: 'Quality Score',
+                    color: 'linear-gradient(135deg, var(--coffee-green), var(--success-green))'
+                },
+                { 
+                    icon: 'fa-solid fa-coins',
+                    value: balance.toLocaleString(),
+                    label: 'VERI Balance',
+                    color: 'linear-gradient(135deg, var(--coffee-light), var(--coffee-dark))'
+                }
+            ];
+
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: ${stat.color};">
+                        <i class="${stat.icon}"></i>
+                    </div>
+                    <h3 class="stat-value">${stat.value}</h3>
+                    <p class="stat-label">${stat.label}</p>
+                </div>
+            `).join('');
+        }
+
+        // Recent Activity
+        function loadRecentActivity() {
+            const tableBody = document.querySelector('#recentActivityTable tbody');
+            if (!tableBody) return;
+
+            const meName = currentUser?.company?.name;
+
+            const recentOrders = [...window.VeriPuraCoffeeData.orders]
+                .filter(o => o.from === meName || o.to === meName)
+                .sort((a, b) => new Date(b.created) - new Date(a.created))
+                .slice(0, 5);
+
+            if (recentOrders.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No recent orders found.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = recentOrders.map(order => {
+                const traceIcon = order.traceabilityMethod === 'Natural Trace' 
+                    ? '<i class="fa-solid fa-dna text-warning me-1" title="Natural Trace Verified"></i>' 
+                    : '<i class="fa-solid fa-barcode text-muted me-1" title="Standard Tracking"></i>';
+
+                const certBadges = (order.certifications || [])
+                    .map(cert => `<span class="badge bg-success text-white me-1" style="font-size: 0.6rem;">${escapeHTML(cert)}</span>`)
+                    .join('');
+
+                // Whitelist status to avoid class injection
+                const statusKey = String(order.status || '').toLowerCase();
+                const allowed = { pending:1, active:1, processing:1, completed:1, testing:1 };
+                const statusClass = allowed[statusKey] ? statusKey : 'pending';
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${escapeHTML(order.id)}</strong>
+                            ${traceIcon}
+                            <br>
+                            <div class="mt-1">${certBadges}</div>
+                        </td>
+                        <td>${escapeHTML(order.variety)}</td>
+                        <td>${escapeHTML(order.quantity)}</td>
+                        <td><span class="status-badge status-${statusClass}">${statusClass.toUpperCase()}</span></td>
+                        <td>${new Date(order.created).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewOrder('${escapeHTML(order.id)}')">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // VERI Token System
+        function loadVeriBalance() {
+            const balanceData = window.VeriPuraCoffeeData.veriBalances[currentUser.company.id];
+            if (balanceData) {
+                document.getElementById('veriBalance').textContent = balanceData.currentBalance.toLocaleString();
+                document.getElementById('floatingTokenCount').textContent = balanceData.currentBalance.toLocaleString();
+                document.getElementById('veriTotalEarned').textContent = balanceData.totalEarned.toLocaleString();
+                document.getElementById('veriMonthlyEarnings').textContent = balanceData.monthlyEarnings.toLocaleString();
+            }
+        }
+
+        function earnVeriTokens(amount, reason) {
+            const balanceData = window.VeriPuraCoffeeData.veriBalances[currentUser.company.id];
+            if (balanceData) {
+                balanceData.currentBalance += amount;
+                if (amount > 0) {
+                    balanceData.monthlyEarnings += amount;
+                    balanceData.totalEarned += amount;
+                }
+                loadVeriBalance();
+            }
+        }
+
+        // Enhanced Purchase Order Functions
+        function createNewOrder() {
+            // If the role can't issue POs, stop here
+            if (allowedTargetsForCurrent().length === 0) {
+                showNotification('error', 'Not Allowed', 'Your organization type cannot issue purchase orders.');
+                return;
+            }
+
+            // Rebuild supplier list for allowed partners only
+            buildSupplierOptions();
+
+            // Reset form
+            document.getElementById('poVariety').value = '';
+            document.getElementById('poQuantity').value = '';
+            document.getElementById('poBasePrice').value = '5.50';
+            document.getElementById('poDeliveryDate').value = '';
+
+            // Reset traceability & certifications…
+            document.getElementById('standardTrace').checked = true;
+            document.getElementById('naturalTrace').checked = false;
+            document.querySelectorAll('.traceability-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('.traceability-option:not(.premium-option)').classList.add('selected');
+            
+            // Explicitly call to ensure premium badges are hidden on modal open
+            selectTraceabilityMethod('standard');
+            
+            ['organicCert','fairtradeCert','eudrCert','rainforestCert'].forEach(id => document.getElementById(id).checked = false);
+
+            // Default delivery = +30 days
+            const defaultDate = new Date(); defaultDate.setDate(defaultDate.getDate() + 30);
+            document.getElementById('poDeliveryDate').value = defaultDate.toISOString().split('T')[0];
+
+            updatePOPricing();
+            new bootstrap.Modal(document.getElementById('enhancedPOModal')).show();
+        }
+
+        function selectTraceabilityMethod(method) {
+            const standard = document.getElementById('standardTrace');
+            const natural  = document.getElementById('naturalTrace');
+
+            if (method === 'standard') {
+                standard.checked = true;
+                natural.checked  = false;
+            } else {
+                standard.checked = false;
+                natural.checked  = true;
+            }
+
+            // Update visual selection state
+            document.querySelectorAll('.traceability-option').forEach(option => option.classList.remove('selected'));
+            if (method === 'natural') {
+                document.querySelector('.premium-option').classList.add('selected');
+            } else {
+                document.querySelector('.traceability-option:not(.premium-option)').classList.add('selected');
+            }
+
+            // NEW: Hide/disable premium UI when Standard is selected
+            const premiumCard = document.querySelector('.premium-option');
+            if (premiumCard) {
+                const premiumBadges = premiumCard.querySelectorAll('.badge, .natural-trace-benefits');
+                if (method === 'standard') {
+                    premiumCard.classList.add('premium-dimmed');
+                    premiumBadges.forEach(el => el.classList.add('hidden'));
+                } else {
+                    premiumCard.classList.remove('premium-dimmed');
+                    premiumBadges.forEach(el => el.classList.remove('hidden'));
+                }
+            }
+
+            updatePOPricing();
+        }
+
+        function updatePOPricing() {
+            const quantity = parseFloat(document.getElementById('poQuantity').value) || 0;
+            const basePrice = parseFloat(document.getElementById('poBasePrice').value) || 5.50;
+            
+            if (quantity <= 0) {
+                // Reset all displays to zero
+                document.getElementById('baseCostDisplay').textContent = '$0';
+                document.getElementById('traceabilityPremiumDisplay').textContent = '$0';
+                document.getElementById('certificationPremiumDisplay').textContent = '$0';
+                document.getElementById('deliveryPremiumDisplay').textContent = '$0';
+                document.getElementById('totalCostDisplay').textContent = '$0';
+                document.getElementById('veriCostDisplay').textContent = '0 VERI';
+                return;
+            }
+            
+            let baseCost = quantity * basePrice;
+            let traceabilityPremium = 0;
+            let certificationPremium = 0;
+            let deliveryPremium = 0;
+            
+            // Traceability premium
+            if (document.getElementById('naturalTrace').checked) {
+                traceabilityPremium = baseCost * 0.15; // 15% premium
+            }
+            
+            // Certification premiums
+            if (document.getElementById('organicCert').checked) {
+                certificationPremium += quantity * 0.50;
+            }
+            if (document.getElementById('fairtradeCert').checked) {
+                certificationPremium += quantity * 0.25;
+            }
+            if (document.getElementById('eudrCert').checked) {
+                certificationPremium += quantity * 0.30;
+            }
+            if (document.getElementById('rainforestCert').checked) {
+                certificationPremium += quantity * 0.20;
+            }
+            
+            // Delivery premium (rush orders)
+            deliveryPremium = calculateDeliveryPremium();
+            
+            const totalCost = baseCost + traceabilityPremium + certificationPremium + deliveryPremium;
+            const veriCost = Math.floor(totalCost * 0.1); // 10% of order value in VERI tokens
+            
+            // Update displays
+            document.getElementById('baseCostDisplay').textContent = `$${baseCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('traceabilityPremiumDisplay').textContent = `$${traceabilityPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('certificationPremiumDisplay').textContent = `$${certificationPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('deliveryPremiumDisplay').textContent = `$${deliveryPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('totalCostDisplay').textContent = `$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('veriCostDisplay').textContent = `${veriCost.toLocaleString()} VERI`;
+            
+            updateROIBenefits(totalCost, traceabilityPremium);
+        }
+
+        function calculateDeliveryPremium() {
+            const dateStr = document.getElementById('poDeliveryDate').value;
+            const quantity = parseFloat(document.getElementById('poQuantity').value) || 0;
+            if (!dateStr || quantity <= 0) return 0;
+
+            const delivery = new Date(dateStr);
+            const today = new Date();
+            delivery.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            const daysUntil = Math.round((delivery - today) / 86400000);
+
+            if (daysUntil < 14) return quantity * 0.15;
+            if (daysUntil < 21) return quantity * 0.08;
+            return 0;
+        }
+
+        function updateDeliveryPremium() {
+            updatePOPricing();
+        }
+
+        function updateROIBenefits(totalCost, traceabilityPremium) {
+            const roiBenefits = document.getElementById('roiBenefits');
+            const isNaturalTrace = document.getElementById('naturalTrace').checked;
+            
+            if (isNaturalTrace && traceabilityPremium > 0) {
+                const brandPremiumMin = Math.floor(totalCost * 0.20);
+                const brandPremiumMax = Math.floor(totalCost * 0.35);
+                const fraudProtectionMin = Math.floor(traceabilityPremium * 4);
+                const fraudProtectionMax = Math.floor(traceabilityPremium * 8);
+                
+                roiBenefits.innerHTML = `
+                    <div class="benefit-line">
+                        <i class="fas fa-chart-line text-success me-2"></i>
+                        <span>Brand premium potential: <strong>$${brandPremiumMin.toLocaleString()}-${brandPremiumMax.toLocaleString()}</strong></span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-shield-alt text-primary me-2"></i>
+                        <span>Fraud protection value: <strong>$${fraudProtectionMin.toLocaleString()}-${fraudProtectionMax.toLocaleString()}</strong></span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-users text-warning me-2"></i>
+                        <span>Consumer trust boost: <strong>+25% loyalty</strong></span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-clock text-info me-2"></i>
+                        <span>Recall time reduction: <strong>98% faster</strong></span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-award text-success me-2"></i>
+                        <span>Natural Trace marketing rights: <strong>Premium positioning</strong></span>
+                    </div>
+                `;
+            } else {
+                roiBenefits.innerHTML = `
+                    <div class="benefit-line">
+                        <i class="fas fa-chart-line text-success me-2"></i>
+                        <span>Brand premium potential: <strong>+5-10%</strong></span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-shield-alt text-muted me-2"></i>
+                        <span>Standard fraud protection</span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-users text-muted me-2"></i>
+                        <span>Basic traceability features</span>
+                    </div>
+                    <div class="benefit-line">
+                        <i class="fas fa-clock text-muted me-2"></i>
+                        <span>Standard recall procedures</span>
+                    </div>
+                `;
+            }
+        }
+
+        function submitPurchaseOrder() {
+            const supplier = document.getElementById('poSupplier').value;
+            const variety = document.getElementById('poVariety').value;
+            const quantity = document.getElementById('poQuantity').value;
+            const deliveryDate = document.getElementById('poDeliveryDate').value;
+            
+            if (!supplier || !variety || !quantity || !deliveryDate) {
+                showNotification('error', 'Validation Error', 'Please fill in all required order details');
+                return;
+            }
+
+            const supplierCompany = getCompanyById(supplier);
+            if (!supplierCompany) {
+                showNotification('error', 'Invalid Supplier', 'Please select a valid supplier.');
+                return;
+            }
+
+            // Prevent self-PO
+            if (supplierCompany.id === currentUser.company.id) {
+                showNotification('error', 'Invalid Partner', 'You cannot issue a PO to your own organization.');
+                return;
+            }
+
+            // Enforce allowed direction
+            const allowed = allowedTargetsForCurrent();
+            if (!allowed.includes(supplierCompany.type)) {
+                showNotification(
+                    'error',
+                    'Not Allowed',
+                    `Your organization type (${currentUser.company.type}) can only issue POs to: ${allowed.length ? allowed.join(', ') : 'no one'}.`
+                );
+                return;
+            }
+            
+            const isNaturalTrace = document.getElementById('naturalTrace').checked;
+            const totalCost = document.getElementById('totalCostDisplay').textContent;
+            const veriCost = document.getElementById('veriCostDisplay').textContent;
+            
+            // Generate new order ID
+            const year = new Date().getFullYear();
+            const orderId = `CF-${year}-${String(window.VeriPuraCoffeeData.orders.length + 1).padStart(3, '0')}`;
+            
+            // Collect certifications
+            const certifications = [];
+            if (document.getElementById('organicCert').checked) certifications.push('Organic');
+            if (document.getElementById('fairtradeCert').checked) certifications.push('Fair Trade');
+            if (document.getElementById('eudrCert').checked) certifications.push('EUDR');
+            if (document.getElementById('rainforestCert').checked) certifications.push('Rainforest Alliance');
+            
+            // Determine order direction based on user's company type and supplier selection
+            let orderDirection = 'sent'; // Default: user is sending order to supplier
+            const supplierName = supplierCompany.name;
+            
+            // Pull numeric total from the UI and compute cents
+            const totalCostNumber = parseFloat(document.getElementById('totalCostDisplay')
+                .textContent.replace(/[^\d.]/g, '')) || 0;
+            const priceCents = Math.round(totalCostNumber * 100);
+
+            // Build the new order object
+            const newOrder = {
+                id: orderId,
+                from: currentUser.company.name,
+                to: supplierName,
+                variety: variety,
+                quantity: quantity + ' kg',
+                price: `$${totalCostNumber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                priceCents: priceCents,            // <-- NEW: numeric for sorting/analytics
+                status: 'pending',
+                traceabilityMethod: isNaturalTrace ? 'Natural Trace' : 'Standard',
+                certifications: certifications,
+                created: new Date().toISOString().split('T')[0],
+                delivery: deliveryDate,
+                veriCost: veriCost,
+                direction: orderDirection,
+                thread: [
+                    {
+                        author: currentUser.company.name,
+                        msg: `Purchase order created for ${quantity}kg ${variety} ${isNaturalTrace ? 'with Natural Trace verification' : 'with standard tracking'}`,
+                        ts: new Date().toLocaleString()
+                    }
+                ]
+            };
+            
+            // Add to orders array
+            window.VeriPuraCoffeeData.orders.unshift(newOrder);
+            
+            // Deduct VERI tokens
+            const veriAmount = parseInt(veriCost.replace(/[^\d]/g, ''));
+            earnVeriTokens(-veriAmount, `Purchase order ${orderId} creation fee`);
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('enhancedPOModal')).hide();
+            
+            // Show success notification
+            showNotification('success', 'Purchase Order Created', 
+                `Order ${orderId} created successfully. ${isNaturalTrace ? 'Natural Trace verification initiated.' : 'Standard tracking activated.'}`);
+            
+            // Refresh relevant displays
+            loadRecentActivity();
+            loadDashboardStats();
+            if (document.getElementById('ordersSection').style.display !== 'none') {
+                loadOrders();
+            }
+            
+            // Simulate order processing
+            setTimeout(() => {
+                const order = window.VeriPuraCoffeeData.orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = 'active';
+                    order.thread.push({
+                        author: supplierName,
+                        msg: `Order confirmed. ${isNaturalTrace ? 'NaturalTag application scheduled.' : 'Standard processing initiated.'}`,
+                        ts: new Date().toLocaleString()
+                    });
+                    showNotification('info', 'Order Update', `${orderId}: Supplier confirmed. ${isNaturalTrace ? 'NaturalTag application scheduled.' : 'Standard processing initiated.'}`);
+                    loadRecentActivity();
+                    loadDashboardStats();
+                    if (document.getElementById('ordersSection').style.display !== 'none') {
+                        loadOrders();
+                    }
+                }
+            }, 3000);
+        }
+
+        // Threaded Orders System
+        function loadOrders() {
+            const currentCompanyName = currentUser.company.name;
+            const currentCompanyType = currentUser.company.type;
+            const orders = window.VeriPuraCoffeeData.orders;
+            
+            // Determine section labels based on company type
+            let firstSectionLabel, firstSectionIcon;
+            if (currentCompanyType === 'exporter') {
+                firstSectionLabel = 'Issued Purchase Orders';
+                firstSectionIcon = 'fas fa-paper-plane';
+            } else {
+                firstSectionLabel = 'Sent Purchase Orders';
+                firstSectionIcon = 'fas fa-paper-plane';
+            }
+            
+            // Update the first section title
+            document.getElementById('firstSectionLabel').textContent = firstSectionLabel;
+            document.querySelector('#firstSectionTitle i').className = `${firstSectionIcon} me-2 text-success`;
+            
+            // Filter orders based on current user's perspective
+            const firstSectionOrders = orders.filter(order => order.from === currentCompanyName);
+            const secondSectionOrders = orders.filter(order => order.to === currentCompanyName);
+            
+            // Update section counters
+            document.getElementById('firstOrderCount').textContent = firstSectionOrders.length;
+            document.getElementById('secondOrderCount').textContent = secondSectionOrders.length;
+            
+            // Populate first section orders
+            document.getElementById('firstOrdersList').innerHTML = firstSectionOrders.length > 0 ? 
+                firstSectionOrders.map(order => createThreadedOrderItem(order, 'first')).join('') :
+                `<div class="p-4 text-center text-muted"><i class="${firstSectionIcon} fa-2x mb-2"></i><p>No ${firstSectionLabel.toLowerCase()}</p></div>`;
+            
+            // Populate second section orders
+            document.getElementById('secondOrdersList').innerHTML = secondSectionOrders.length > 0 ? 
+                secondSectionOrders.map(order => createThreadedOrderItem(order, 'second')).join('') :
+                '<div class="p-4 text-center text-muted"><i class="fa-solid fa-inbox fa-2x mb-2"></i><p>No received orders</p></div>';
+        }
+        
+        function createThreadedOrderItem(order, section) {
+            const traceIcon = order.traceabilityMethod === 'Natural Trace'
+                ? '<i class="fa-solid fa-dna text-warning ms-1" title="Natural Trace"></i>'
+                : '<i class="fa-solid fa-barcode text-muted ms-1" title="Standard Tracking"></i>';
+
+            const certBadges = (order.certifications && order.certifications.length > 0)
+                ? order.certifications.map(cert => `<span class="cert-badge">${escapeHTML(cert)}</span>`).join('')
+                : '';
+
+            const partnerLabel = section === 'first' ? 'To:' : 'From:';
+            const partner = section === 'first' ? order.to : order.from;
+
+            const statusKey = String(order.status || '').toLowerCase();
+            const allowed = { pending:1, active:1, processing:1, completed:1, testing:1 };
+            const statusClass = allowed[statusKey] ? statusKey : 'pending';
+
+            const threadMessages = order.thread ? order.thread.map(msg => `
+                <div class="thread-message">
+                    <div class="message-author">
+                        ${escapeHTML(msg.author)}
+                        <span class="message-time">${escapeHTML(msg.ts)}</span>
+                    </div>
+                    <div>${escapeHTML(msg.msg)}</div>
+                </div>
+            `).join('') : '';
+
+            return `
+                <div class="threaded-order">
+                    <div class="order-row" onclick="toggleOrderDetails('${escapeHTML(order.id)}')">
+                        <div class="order-summary">
+                            <div class="order-id">
+                                ${escapeHTML(order.id)}
+                                ${traceIcon}
+                            </div>
+                            <div class="order-meta">
+                                <strong>${escapeHTML(order.variety)}</strong> - ${escapeHTML(order.quantity)}
+                                <br><small>${partnerLabel}</small> ${escapeHTML(partner)}
+                            </div>
+                        </div>
+                        <div class="order-status">
+                            <span class="status-badge status-${statusClass}">${statusClass.toUpperCase()}</span>
+                        </div>
+                        <div class="order-chevron">
+                            <i class="fa-solid fa-chevron-down" id="chevron-${escapeHTML(order.id)}"></i>
+                        </div>
+                    </div>
+                    <div class="order-details" id="details-${escapeHTML(order.id)}">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Order ID</div>
+                                <div class="detail-value">${escapeHTML(order.id)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Coffee Variety</div>
+                                <div class="detail-value">${escapeHTML(order.variety)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Quantity</div>
+                                <div class="detail-value">${escapeHTML(order.quantity)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Total Value</div>
+                                <div class="detail-value">${escapeHTML(order.price)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">${partnerLabel.slice(0, -1)}</div>
+                                <div class="detail-value">${escapeHTML(partner)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Traceability Method</div>
+                                <div class="detail-value">${escapeHTML(order.traceabilityMethod || 'Standard')}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Certifications</div>
+                                <div class="detail-value">${certBadges || '<span class="text-muted">None</span>'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Order Date</div>
+                                <div class="detail-value">${new Date(order.created).toLocaleDateString()}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Delivery Date</div>
+                                <div class="detail-value">${new Date(order.delivery).toLocaleDateString()}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value"><span class="status-badge status-${statusClass}">${statusClass.toUpperCase()}</span></div>
+                            </div>
+                        </div>
+
+                        ${threadMessages ? `
+                            <div class="thread-messages">
+                                <h6 class="mb-3">Order Communication</h6>
+                                ${threadMessages}
+                            </div>` : ''}
+
+                        <div class="order-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="addOrderMessage('${escapeHTML(order.id)}')">
+                                <i class="fa-solid fa-comment me-1"></i>Add Message
+                            </button>
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="fa-solid fa-eye me-1"></i>View Full Details
+                            </button>
+                            ${order.traceabilityMethod === 'Natural Trace' ? `
+                                <button class="btn btn-sm btn-outline-warning">
+                                    <i class="fa-solid fa-dna me-1"></i>Natural Trace Status
+                                </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleOrderDetails(orderId) {
+            const details = document.getElementById(`details-${orderId}`);
+            const chevron = document.getElementById(`chevron-${orderId}`);
+            
+            if (details.classList.contains('expanded')) {
+                details.classList.remove('expanded');
+                chevron.classList.remove('expanded');
+            } else {
+                // Close all other details
+                document.querySelectorAll('.order-details.expanded').forEach(el => el.classList.remove('expanded'));
+                document.querySelectorAll('.order-chevron i.expanded').forEach(el => el.classList.remove('expanded'));
+                
+                // Open this one
+                details.classList.add('expanded');
+                chevron.classList.add('expanded');
+            }
+        }
+
+        function toggleSection(section) {
+            const content = document.getElementById(`${section}OrdersContent`);
+            const chevron = document.getElementById(`${section}Chevron`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                chevron.classList.remove('collapsed');
+            } else {
+                content.style.display = 'none';
+                chevron.classList.add('collapsed');
+            }
+        }
+
+        function viewOrder(orderId) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelector('[data-section="orders"]').classList.add('active');
+            showSection('orders');
+            
+            setTimeout(() => {
+                // Find and expand the order
+                const orderElement = document.getElementById(`details-${orderId}`);
+                if (orderElement) {
+                    if (!orderElement.classList.contains('expanded')) {
+                        toggleOrderDetails(orderId);
+                    }
+                }
+            }, 100);
+        }
+
+        // Testing System
+        function openTestingModal(testType = null) {
+            selectedTestType = testType;
+            populateTestTypeGrid();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('harvestDate').value = today;
+            
+            new bootstrap.Modal(document.getElementById('coffeeTestModal')).show();
+        }
+
+        function populateTestTypeGrid() {
+            const grid = document.getElementById('testTypeGrid');
+            const protocols = window.VeriPuraCoffeeData.testProtocols;
+            
+            grid.innerHTML = Object.keys(protocols).map(testType => {
+                const protocol = protocols[testType];
+                const isSelected = testType === selectedTestType;
+                
+                return `
+                    <div class="test-card ${testType}-test ${isSelected ? 'selected' : ''}" onclick="selectTestType('${testType}')">
+                        <h6>
+                            <div class="test-icon">
+                                <i class="${protocol.icon}"></i>
+                            </div>
+                            ${protocol.name}
+                        </h6>
+                        <div class="test-details">
+                            <p><strong>Description:</strong> ${protocol.description}</p>
+                            <p><strong>Cost:</strong> ${protocol.baseCost.min}-${protocol.baseCost.max} VERI tokens</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectTestType(testType) {
+            selectedTestType = testType;
+            document.querySelectorAll('.test-card').forEach(card => card.classList.remove('selected'));
+            document.querySelector(`.${testType}-test`).classList.add('selected');
+        }
+
+        function submitTestRequest() {
+            if (!selectedTestType || !document.getElementById('lotId').value) {
+                showNotification('error', 'Validation Error', 'Please fill in all required fields');
+                return;
+            }
+            
+            const testId = `TEST-${selectedTestType.toUpperCase()}-${Date.now()}`;
+            const protocol = window.VeriPuraCoffeeData.testProtocols[selectedTestType];
+            const cost = Math.floor(Math.random() * 20) + 35;
+            
+            window.VeriPuraCoffeeData.testRequests.push({
+                testId: testId,
+                testType: selectedTestType,
+                lotId: document.getElementById('lotId').value,
+                status: 'processing',
+                requestDate: new Date().toISOString(),
+                cost: cost,
+                score: Math.floor(Math.random() * 20) + 75
+            });
+            
+            // Save state after adding test request
+            saveState();
+            
+            bootstrap.Modal.getInstance(document.getElementById('coffeeTestModal')).hide();
+            
+            showNotification('success', 'Test Request Submitted', 
+                `Test request ${testId} submitted successfully.`);
+            
+            earnVeriTokens(-cost, `${protocol.name} testing fee`);
+            
+            setTimeout(() => {
+                const testRequest = window.VeriPuraCoffeeData.testRequests.find(t => t.testId === testId);
+                if (testRequest) {
+                    testRequest.status = 'completed';
+                    earnVeriTokens(35, 'Test completion bonus');
+                    saveState(); // Save after test completion
+                    showNotification('success', 'Test Complete', `${testId}: Results available`);
+                    loadRecentTests();
+                }
+            }, 3000);
+            
+            loadRecentTests();
+        }
+
+        function loadRecentTests() {
+            const tableBody = document.querySelector('#recentTestsTable tbody');
+            if (!tableBody) return;
+            
+            // Ensure arrays exist before mapping
+            const testRequests = window.VeriPuraCoffeeData.testRequests || [];
+            const naturalTagApplications = window.VeriPuraCoffeeData.naturalTagApplications || [];
+            const naturalDetectVerifications = window.VeriPuraCoffeeData.naturalDetectVerifications || [];
+            
+            // Combine all test types for display
+            const allTests = [
+                ...testRequests.map(test => ({
+                    id: test.testId,
+                    type: test.testType,
+                    status: test.status,
+                    date: test.requestDate,
+                    score: test.score,
+                    category: 'standard'
+                })),
+                ...naturalTagApplications.map(app => ({
+                    id: app.naturalTagId,
+                    type: 'naturaltag',
+                    status: app.status,
+                    date: app.applicationDate,
+                    score: app.status === 'verified' ? 'APPLIED' : 'PENDING',
+                    category: 'naturaltag'
+                })),
+                ...naturalDetectVerifications.map(ver => ({
+                    id: ver.verificationId,
+                    type: 'naturaldetect',
+                    status: ver.status,
+                    date: ver.verificationDate,
+                    score: ver.status === 'completed' ? 
+                        (ver.authenticity === 'authentic' ? `${ver.confidence.toFixed(1)}%` : 'FAILED') : 'PENDING',
+                    category: 'naturaldetect'
+                }))
+            ];
+            
+            // Sort by date (most recent first)
+            allTests.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const recentTests = allTests.slice(0, 5);
+            
+            tableBody.innerHTML = recentTests.length > 0 ? recentTests.map(test => {
+                const typeLabel = test.type === 'naturaltag' ? 'NATURALTAG'
+                                : test.type === 'naturaldetect' ? 'NATURALDETECT'
+                                : test.type.toUpperCase();
+                const iconClass = ICONS[test.type] || 'fas fa-flask';
+                
+                return `
+                    <tr>
+                        <td><small>${test.id}</small></td>
+                        <td><i class="${iconClass} me-1"></i>${typeLabel}</td>
+                        <td><span class="status-badge status-${test.status}">${test.status.toUpperCase()}</span></td>
+                        <td><small>${new Date(test.date).toLocaleDateString()}</small></td>
+                        <td>${test.score}</td>
+                        <td><button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button></td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="6" class="text-center py-3">No recent tests.</td></tr>';
+            
+            // Update total tests count
+            document.getElementById('totalTestsCount').textContent = allTests.length;
+        }
+
+        // Utility Functions
+        function showNotification(type, title, message) {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast" role="alert">
+                    <div class="toast-header bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} text-white">
+                        <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 5000 });
+            toast.show();
+            
+            toastElement.addEventListener('hidden.bs.toast', function() { this.remove(); });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure all data arrays are properly initialized first
+            safeDataAccess();
+            normalizeSeedOrders();
+            normalizePriceCents();
+            
+            const authForm = document.getElementById('authForm');
+            if (authForm) {
+                authForm.addEventListener('submit', handleAuth);
+            }
+            
+            // Only load recent tests after ensuring data safety
+            try {
+                loadRecentTests();
+            } catch (error) {
+                console.log('Initial test load skipped - data not ready');
+            }
+            
+            // Fix accessibility: Clear focus when modals are hidden
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                // Clear focus before hiding
+                modal.addEventListener('hide.bs.modal', function() {
+                    // Remove focus from any focused element within the modal
+                    const focusedElements = this.querySelectorAll(':focus');
+                    focusedElements.forEach(el => el.blur());
+                });
+                
+                // Clean up after hidden
+                modal.addEventListener('hidden.bs.modal', function() {
+                    // Additional cleanup - remove any lingering focus
+                    const allFocusable = this.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    allFocusable.forEach(el => el.blur());
+                    
+                    // Move focus back to body to prevent focus trap
+                    document.body.focus();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
