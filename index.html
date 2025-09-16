@@ -32,6 +32,39 @@
             min-height: 100vh;
         }
 
+        /* Higher-contrast Natural Trace action buttons */
+        #naturalTraceActions .btn-outline-warning{
+          background: linear-gradient(135deg, var(--coffee-dark), var(--coffee-medium));
+          color: #fff !important;
+          border: 0;
+        }
+
+        #naturalTraceActions .btn-outline-warning i,
+        #naturalTraceActions .btn-outline-warning small{
+          color: #fff !important;
+          opacity: 0.95;
+        }
+
+        #naturalTraceActions .btn-outline-warning:hover{
+          filter: brightness(1.05);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(60, 36, 21, 0.25);
+        }
+
+        /* Keyboard focus ring */
+        #naturalTraceActions .btn-outline-warning:focus-visible{
+          outline: 3px solid #fff;
+          box-shadow: 0 0 0 4px rgba(74,93,35,.4);
+        }
+
+        /* Disabled state (just in case) */
+        #naturalTraceActions .btn-outline-warning:disabled{
+          filter: grayscale(.2) brightness(.9);
+          opacity: .8;
+        }
+
+
+
         /* Coffee sack texture effect */
         .coffee-texture::before {
             content: '';
@@ -119,13 +152,6 @@
             font-size: 1rem; 
             opacity: 0.95; 
             font-weight: 500; 
-        }
-        .brand-tagline-vietnamese { 
-            margin: 0; 
-            font-size: 0.875rem; 
-            opacity: 0.85; 
-            font-weight: 400; 
-            margin-top: 0.25rem; 
         }
 
         /* Form Elements */
@@ -356,6 +382,7 @@
         .status-processing { background: #FEF3C7; color: #92400E; }
         .status-completed { background: #D1FAE5; color: #065F46; }
         .status-testing { background: #F3E8FF; color: #6B21A8; }
+        .status-applied { background: #E0F2FE; color: #0369A1; }
 
         /* Threaded Purchase Order Styles */
         .threaded-order {
@@ -412,7 +439,8 @@
             transition: max-height 0.3s ease, padding 0.3s ease;
         }
         .order-details.expanded {
-            max-height: 800px;
+            max-height: none;   /* was 800px */
+            overflow: visible;  /* was hidden */
             padding: 1.5rem;
         }
         
@@ -702,6 +730,54 @@
             .modal-xl { max-width: 95%; }
             .cost-summary-card, .roi-summary-card { margin-bottom: 1rem; }
         }
+
+        /* High-contrast text fixes */
+        .sidebar .nav-link { color: #f2f6fa !important; }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link:focus { color: #ffffff !important; }
+        .sidebar .nav-link.active { color: #ffffff !important; font-weight: 600; }
+        .sidebar .nav-link i { color: inherit !important; }
+
+        .btn-success,
+        .btn-success:hover,
+        .btn-success:focus,
+        .btn-success:active { color: #ffffff !important; }
+
+        .btn-create-po { color: #ffffff !important; }
+
+        /* Natural Trace FAB (fallback trigger) */
+        #ntFab{
+          position: fixed;
+          right: 22px;
+          bottom: 22px;
+          z-index: 2147483000;
+          border: none;
+          border-radius: 999px;
+          padding: 12px 14px;
+          font-size: 16px;
+          box-shadow: 0 8px 20px rgba(0,0,0,.25);
+          display: none;
+        }
+        #ntFab.show{ display: inline-flex; align-items: center; gap: 8px; }
+
+        /* 7) Global focus-visible ring (keyboard accessibility) */
+        .btn:focus-visible,
+        .nav-link:focus-visible,
+        .nt-chip:focus-visible,
+        button:focus-visible {
+          outline: 3px solid #fff !important;
+          box-shadow: 0 0 0 4px rgba(74,93,35,.45) !important;
+        }
+
+        /* 8) Print-only styles for the report */
+        @media print {
+          body * { visibility: hidden !important; }
+          #complianceReportModal, #complianceReportModal * { visibility: visible !important; }
+          #complianceReportModal .modal-dialog { width: 100% !important; max-width: none !important; }
+          #complianceReportModal .modal-content { box-shadow: none !important; border: 0 !important; }
+          .modal-backdrop { display: none !important; }
+          .content-card { break-inside: avoid; page-break-inside: avoid; }
+        }
     </style>
 </head>
 <body>
@@ -719,8 +795,7 @@
                         </div>
                         <h1 class="brand-title">VeriPura</h1>
                     </div>
-                    <p class="brand-tagline">Drink only the Purest</p>
-                    <p class="brand-tagline-vietnamese">Chỉ uống cà phê tinh khiết nhất</p>
+                    <p class="brand-tagline">Drink only the Very Purest Coffee</p>
                 </div>
             </div>
             <div class="auth-body">
@@ -919,6 +994,9 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Natural Trace actions (filled based on org type) -->
+                        <div id="naturalTraceActions" class="mt-3"></div>
                         
                         <div class="mt-4">
                             <h6>Recent Test Results</h6>
@@ -958,7 +1036,11 @@
 
                 <!-- First Orders Section (Sent/Issued) -->
                 <div class="content-card">
-                    <div class="card-header" style="cursor: pointer;" onclick="toggleSection('first')">
+                    <div class="card-header"
+                         role="button" tabindex="0"
+                         style="cursor: pointer;"
+                         onclick="toggleSection('first')"
+                         onkeydown="if(event.key==='Enter'||event.key===' ') toggleSection('first')">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="card-title" id="firstSectionTitle">
                                 <i class="fas fa-paper-plane me-2 text-success"></i>
@@ -977,7 +1059,11 @@
 
                 <!-- Second Orders Section (Received) -->
                 <div class="content-card">
-                    <div class="card-header" style="cursor: pointer;" onclick="toggleSection('second')">
+                    <div class="card-header"
+                         role="button" tabindex="0"
+                         style="cursor: pointer;"
+                         onclick="toggleSection('second')"
+                         onkeydown="if(event.key==='Enter'||event.key===' ') toggleSection('second')">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="card-title">
                                 <i class="fas fa-inbox me-2 text-primary"></i>
@@ -1304,6 +1390,135 @@
         </div>
     </div>
 
+    <!-- Apply NaturalTag (Cooperative) -->
+    <div class="modal fade" id="naturalTagModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fas fa-dna me-2"></i>Apply NaturalTag</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="sample-info-form">
+              <div class="form-group">
+                <label class="form-label">Lot ID</label>
+                <input id="ntLotId" class="form-control" placeholder="e.g., COF-2025-0821-01">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Batch Size (kg)</label>
+                <input id="ntBatchSize" type="number" class="form-control" min="1" step="1" placeholder="500">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Processing Method</label>
+                <select id="ntProcess" class="form-select">
+                  <option value="washed">Washed</option>
+                  <option value="natural">Natural</option>
+                  <option value="honey">Honey</option>
+                  <option value="wet-hulled">Wet Hulled</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Application Timestamp</label>
+                <input id="ntTimestamp" type="datetime-local" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Photo (optional)</label>
+                <input id="ntPhoto" type="file" accept="image/*" class="form-control">
+                <small class="text-muted">Stored locally for demo only.</small>
+                <img id="ntPreview" class="mt-2 rounded" style="max-width:180px; display:none;" alt="Preview">
+              </div>
+            </div>
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-gift me-2"></i>
+              Applying NaturalTag grants a small VERI reward for demo purposes.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" onclick="submitNaturalTagApplication()" style="background: var(--coffee-dark); border-color: var(--coffee-dark);">
+              <i class="fas fa-dna me-2"></i>Apply NaturalTag
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verify NaturalTag / NaturalDetect (Exporter) -->
+    <div class="modal fade" id="naturalDetectModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Verify NaturalTag</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="sample-info-form">
+              <div class="form-group">
+                <label class="form-label">NaturalTag ID</label>
+                <input id="ndTagId" class="form-control" placeholder="e.g., NT-COF-2025-0001">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Lot ID (optional)</label>
+                <input id="ndLotId" class="form-control" placeholder="Match by lot if known">
+              </div>
+            </div>
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-bolt me-2"></i>
+              Instant demo results: authenticity + confidence, auto "blockchain upload", and smart-contract release toast.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" onclick="submitNaturalDetectVerification()" style="background: var(--coffee-dark); border-color: var(--coffee-dark);">
+              <i class="fas fa-check-circle me-2"></i>Run Verification
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Viewer (generic) -->
+    <div class="modal fade" id="evidenceModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Evidence</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="evidenceModalBody" class="small"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance & Natural Trace Report Modal -->
+    <div class="modal fade" id="complianceReportModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header" style="background: var(--coffee-dark); color: #fff;">
+            <h5 class="modal-title">
+              <i class="fas fa-clipboard-check me-2"></i>Compliance & Natural Trace Report
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close report"></button>
+          </div>
+          <div class="modal-body" id="crBody">
+            <!-- filled by openComplianceReport(orderId) -->
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button class="btn btn-dark" onclick="window.print()" aria-label="Print compliance report">
+              <i class="fas fa-print me-2"></i>Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Floating Token Counter -->
     <div class="floating-token-counter" id="floatingTokenCounter">
         <div class="d-flex align-items-center">
@@ -1311,6 +1526,12 @@
             <span id="floatingTokenCount">0</span>
         </div>
     </div>
+
+    <!-- Natural Trace FAB (fallback trigger) -->
+    <button id="ntFab" aria-label="Open Natural Trace actions">
+        <i class="fas fa-dna"></i>
+        Natural Trace
+    </button>
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1364,6 +1585,8 @@
                 }
             },
             testRequests: [],
+            naturalTagApplications: [],
+            naturalDetectVerifications: [],
             veriBalances: {
                 'highland-cooperative': { currentBalance: 1240, totalEarned: 1850, monthlyEarnings: 280 },
                 'mekong-coffee': { currentBalance: 980, totalEarned: 1420, monthlyEarnings: 220 },
@@ -1384,7 +1607,7 @@
                     traceabilityMethod: 'Standard',
                     certifications: ['Organic'],
                     thread: [
-                        { author: 'Highland Coffee Cooperative', msg: 'Order created for 500kg Arabica Typica with Organic certification', ts: '2025-08-15 09:30' },
+                        { author: 'Highland Coffee Cooperative', msg: 'Order created for 500kg Arabica Typica with Organic certification. Lot ID: COF-2025-0815-01', ts: '2025-08-15 09:30' },
                         { author: 'Vietnam Premium Coffee Exports', msg: 'Order confirmed. Processing will begin Monday.', ts: '2025-08-15 14:20' },
                         { author: 'Vietnam Premium Coffee Exports', msg: 'Quality testing scheduled for batch validation', ts: '2025-08-16 08:15' }
                     ]
@@ -1403,7 +1626,7 @@
                     certifications: ['Fair Trade', 'EUDR'],
                     thread: [
                         { author: 'Specialty Coffee Roasters Inc.', msg: 'Purchase order submitted with Natural Trace verification requirement', ts: '2025-08-18 11:00' },
-                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order received. NaturalTag application initiated.', ts: '2025-08-18 15:30' },
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order received. NaturalTag application initiated for lot COF-2025-0818-02.', ts: '2025-08-18 15:30' },
                         { author: 'VeriPura Labs', msg: 'Natural Trace molecular verification in progress', ts: '2025-08-19 10:00' }
                     ]
                 },
@@ -1421,11 +1644,463 @@
                     certifications: ['Organic', 'EUDR'],
                     thread: [
                         { author: 'Specialty Coffee Roasters Inc.', msg: 'Large order placed for Arabica Caturra with premium certifications', ts: '2025-08-20 16:45' },
-                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order under review. Checking available inventory.', ts: '2025-08-21 09:00' }
+                        { author: 'Vietnam Premium Coffee Exports', msg: 'Order under review. Checking available inventory for lot COF-2025-0820-03.', ts: '2025-08-21 09:00' }
                     ]
                 }
             ]
         };
+
+        /* Spotlight removed */
+        const NT_STARRED_IDS = [];       // keep name to avoid refs
+        let ntFilterOn = false;
+
+        /* Helper functions still needed by other parts */
+        function extractLotFromOrder(order){
+          try{
+            const txt = (order.thread||[]).map(t=>t.msg).join(' ');
+            const m = txt.match(/COF-\d{4}-\d{4}-\d{2}/);
+            return m ? m[0] : '';
+          }catch(e){ return ''; }
+        }
+
+        function findTagForLot(lotId){
+          try{
+            const arr = (window.VeriPuraCoffeeData?.naturalTagApplications)||[];
+            // prefer most recent by applicationDate
+            return arr
+              .filter(x => x.lotId === lotId)
+              .sort((a,b)=> new Date(b.applicationDate) - new Date(a.applicationDate))[0] || null;
+          }catch(e){ return null; }
+        }
+
+        function isNTCompleted(){ return false; }  // or delete if unused
+        function ensureSpotlightBar(){ return null; }
+        function pulseHighlight(){}
+
+        function renderNTSpotlightBar(){}     // no-op
+        function toggleNTFilter(){}           // no-op
+        function loadNTFilterFromSession(){}  // no-op
+        function updateOrdersNavNTBadge(){}   // no-op
+        function autoOpenFeaturedOnce(){}     // no-op
+
+        /* ---------- Enhanced Natural Trace Modal Functions ---------- */
+        function lotGuessFromPO(o){
+          try{
+            const created = o.created || new Date().toISOString().slice(0,10); // YYYY-MM-DD
+            const [Y,M,D] = created.split('-');
+            const seq = (o.id.match(/(\d{2,})$/)||[])[1] || '01'; // last digits from PO id
+            return `COF-${Y}-${M}${D}-${String(seq).slice(-2)}`; // e.g., COF-2025-0821-02
+          }catch(e){
+            const d = new Date();
+            const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+            return `COF-${Y}-${M}${D}-01`;
+          }
+        }
+
+        function buildLotSuggestionsForCoop(){
+          const meName = currentUser?.company?.name;
+          if (!meName) return [];
+          const out = [];
+          (window.VeriPuraCoffeeData.orders||[]).forEach(o=>{
+            if (o.to === meName){                       // incoming PO to the cooperative
+              const found = extractLotFromOrder(o);
+              const lot = found && found.length ? found : lotGuessFromPO(o);
+              out.push({ lot, poId: o.id });
+            }
+          });
+          const seen = new Set();
+          return out.filter(x=>{ if(seen.has(x.lot)) return false; seen.add(x.lot); return true; }).slice(0,6);
+        }
+
+        // REPLACED: Enhanced openNaturalTraceForOrder function
+        function openNaturalTraceForOrder(orderId){
+          const orders = (window.VeriPuraCoffeeData?.orders)||[];
+          const o = orders.find(x=>x.id===orderId);
+          if(!o){ showNotification('error','Not found','Order not found'); return; }
+
+          const lot = extractLotFromOrder(o) || '';
+
+          const t = currentUser?.company?.type;
+          if (t === 'cooperative'){
+            // Pass PO context + best-guess lot to the Apply modal
+            openNaturalTagModal({ lot, poId: orderId });
+          } else {
+            // Pass PO context + best-guess lot to the Verify modal
+            const tag = lot ? (findTagForLot(lot)?.naturalTagId || null) : null;
+            openNaturalDetectModal({ lot, poId: orderId, tag });
+          }
+        }
+
+        /* ---------- Natural Trace: role-aware actions (Updated Snippet 3) ---------- */
+        function renderNaturalTraceActions() {
+          const slot = document.getElementById('naturalTraceActions');
+          if (!slot || !currentUser) return;
+          const t = currentUser.company.type;
+
+          let html = '<div class="row g-3">';
+
+          if (t === 'cooperative') {
+            html += `
+              <div class="col-md-6">
+                <button class="btn btn-outline-warning w-100" onclick="openNaturalTagModal()">
+                  <i class="fas fa-dna me-2"></i>Apply NaturalTag
+                  <br><small>Link molecular tag to lot</small>
+                </button>
+              </div>`;
+          }
+
+          if (t === 'exporter' || t === 'roaster') {
+            html += `
+              <div class="col-md-6">
+                <button class="btn btn-outline-warning w-100" onclick="openNaturalDetectModal()">
+                  <i class="fas fa-flask me-2"></i>${t==='roaster'?'View/Request ':''} Verify NaturalTag
+                  <br><small>${t==='roaster'?'Buyer view (demo)':'Run NaturalDetect simulation'}</small>
+                </button>
+              </div>`;
+          }
+
+          html += '</div>';
+          slot.innerHTML = html;
+        }
+
+        // REPLACED: Enhanced openNaturalTagModal function (SNIPPET 1 APPLIED)
+        function openNaturalTagModal(preset = {}) {
+          const modalEl = document.getElementById('naturalTagModal');
+          modalEl.dataset.linkedPo = preset.poId || '';
+
+          // Prefill timestamp (as you already did)
+          const ts = document.getElementById('ntTimestamp');
+          if (ts) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            ts.value = now.toISOString().slice(0,16);
+          }
+
+          // Reset photo + preview
+          const file = document.getElementById('ntPhoto');
+          const prev = document.getElementById('ntPreview');
+          if (file && prev) {
+            file.value = ''; prev.style.display = 'none'; prev.src = '';
+            file.onchange = (e) => {
+              const f = e.target.files?.[0];
+              if (!f) { prev.style.display = 'none'; return; }
+              const r = new FileReader();
+              r.onload = () => { prev.src = r.result; prev.style.display = 'block'; };
+              r.readAsDataURL(f);
+            };
+          }
+
+          // Prefill Lot + Batch size if we have PO context
+          if (preset.lot) document.getElementById('ntLotId').value = preset.lot;
+          if (preset.poId){
+            const o = (VeriPuraCoffeeData.orders||[]).find(x=>x.id===preset.poId);
+            if (o){
+              const qty = parseInt(String(o.quantity).replace(/[^\d]/g,''),10);
+              if (!isNaN(qty)) document.getElementById('ntBatchSize').value = qty;
+            }
+          }
+
+          // Inject quick-pick chips (only if no preset lot)
+          setTimeout(()=>{
+            const body = document.querySelector('#naturalTagModal .modal-body');
+            const old = document.getElementById('ntQuickPick');
+            if (old) old.remove();
+
+            if (!preset.lot && body){
+              const sugg = buildLotSuggestionsForCoop();
+              if (sugg.length){
+                const chips = sugg.map(s =>
+                  `<button type="button" class="btn btn-sm btn-outline-secondary me-2 mb-2"
+                           data-lot="${s.lot}" data-po="${s.poId}">
+                      ${s.lot} <small class="ms-1 text-muted">${s.poId}</small>
+                   </button>`).join('');
+                body.insertAdjacentHTML('beforeend',
+                  `<div id="ntQuickPick" class="mt-3">
+                     <div class="small text-muted mb-2">Quick pick from your received POs:</div>
+                     ${chips}
+                   </div>`);
+                // SNIPPET 1: Apply-modal chips should also prefill batch size
+                body.querySelectorAll('#ntQuickPick button').forEach(btn=>{
+                  btn.addEventListener('click', ()=>{
+                    document.getElementById('ntLotId').value = btn.dataset.lot;
+                    modalEl.dataset.linkedPo = btn.dataset.po || '';
+                    // NEW: prefill batch size from the PO quantity
+                    if (btn.dataset.po){
+                      const o = (VeriPuraCoffeeData.orders||[]).find(x=>x.id===btn.dataset.po);
+                      if (o){
+                        const qty = parseInt(String(o.quantity).replace(/[^\d]/g,''),10);
+                        if (!isNaN(qty)) document.getElementById('ntBatchSize').value = qty;
+                      }
+                    }
+                  });
+                });
+              }
+            }
+          },0);
+
+          new bootstrap.Modal(modalEl).show();
+        }
+
+        /* ---------- Natural Trace FAB Function (Snippet 4) ---------- */
+        function updateNatFab(){
+          const fab = document.getElementById('ntFab');
+          if(!fab) return;
+          const t = currentUser?.company?.type;
+          if (t === 'cooperative' || t === 'exporter' || t === 'roaster'){
+            fab.classList.add('show');
+            fab.onclick = () => {
+              if (t === 'cooperative') openNaturalTagModal();
+              else openNaturalDetectModal();
+            };
+          } else {
+            fab.classList.remove('show');
+            fab.onclick = null;
+          }
+        }
+
+        /* ---------- REPLACED: Enhanced submitNaturalTagApplication ---------- */
+        function submitNaturalTagApplication() {
+          const modalEl = document.getElementById('naturalTagModal');
+          const linkedPO = modalEl?.dataset?.linkedPo || null;
+
+          const lotId = (document.getElementById('ntLotId').value || '').trim();
+          const batchSize = parseFloat(document.getElementById('ntBatchSize').value || '0');
+          const process = document.getElementById('ntProcess').value || 'washed';
+          const ts = document.getElementById('ntTimestamp').value || new Date().toISOString();
+          if (!lotId || batchSize <= 0) {
+            showNotification('error', 'Missing Info', 'Please provide Lot ID and Batch Size.');
+            return;
+          }
+
+          const nTagId = `NT-${lotId.replace(/[^A-Z0-9]+/gi,'').toUpperCase()}-${Math.floor(Math.random()*9000+1000)}`;
+
+          const photoInput = document.getElementById('ntPhoto');
+          const photoName = photoInput?.files?.[0]?.name || null;
+
+          const entry = {
+            naturalTagId: nTagId,
+            lotId,
+            batchSizeKg: batchSize,
+            process,
+            applicationDate: new Date(ts).toISOString(),
+            status: 'applied',
+            photoName,
+            appliedBy: currentUser?.company?.name,
+            linkedOrderId: linkedPO || null
+          };
+
+          (window.VeriPuraCoffeeData.naturalTagApplications ||= []).unshift(entry);
+
+          // Optional: drop a thread note on the linked PO
+          if (linkedPO){
+            const o = (VeriPuraCoffeeData.orders||[]).find(x=>x.id===linkedPO);
+            if (o){
+              (o.thread ||= []).push({
+                author: currentUser?.company?.name || 'User',
+                msg: `NaturalTag ${nTagId} applied to lot ${lotId}.`,
+                ts: new Date().toLocaleString()
+              });
+            }
+          }
+
+          earnVeriTokens(25, `Applied NaturalTag to ${lotId}`);
+
+          bootstrap.Modal.getInstance(document.getElementById('naturalTagModal'))?.hide();
+          showNotification('success', 'NaturalTag Applied', `Tag <b>${nTagId}</b> linked to lot <b>${lotId}</b>.`);
+          showNotification('info', 'Next Step', 'Exporter can now run NaturalDetect verification.');
+
+          loadRecentTests();
+          if (document.getElementById('ordersSection').style.display !== 'none') loadOrders();
+        }
+
+        // REPLACED: Enhanced openNaturalDetectModal function (SNIPPET 2 APPLIED)
+        function openNaturalDetectModal(preset = {}) {
+          const tagInput = document.getElementById('ndTagId');
+          const lotInput = document.getElementById('ndLotId');
+
+          tagInput.value = preset.tag || '';
+          lotInput.value = preset.lot || '';
+
+          setTimeout(()=>{
+            const body = document.querySelector('#naturalDetectModal .modal-body');
+            const old = document.getElementById('ndQuickPick');
+            if (old) old.remove();
+            if (preset.lot || preset.tag) return;
+
+            const sugg = [];
+            // recent NaturalTag applications (best source of tags)
+            (VeriPuraCoffeeData.naturalTagApplications||[]).slice(0,8).forEach(a=>{
+              sugg.push({ lot:a.lotId, tag:a.naturalTagId });
+            });
+            // lots mentioned on orders involving me
+            (VeriPuraCoffeeData.orders||[]).forEach(o=>{
+              const inMyFlow = (o.from===currentUser?.company?.name || o.to===currentUser?.company?.name);
+              if (!inMyFlow) return;
+              const l = extractLotFromOrder(o);
+              if (l) sugg.push({ lot:l, tag:'' });
+            });
+
+            const seen = new Set();
+            const uniq = sugg.filter(s=>{ const k = `${s.lot}|${s.tag}`; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0,8);
+
+            if (uniq.length && body){
+              const chips = uniq.map(s=>{
+                const label = s.tag ? s.tag : s.lot;
+                return `<button type="button" class="btn btn-sm btn-outline-secondary me-2 mb-2" data-lot="${s.lot||''}" data-tag="${s.tag||''}">${label}</button>`;
+              }).join('');
+              body.insertAdjacentHTML('beforeend',
+                `<div id="ndQuickPick" class="mt-3">
+                   <div class="small text-muted mb-2">Recent lots & tags:</div>
+                   ${chips}
+                 </div>`);
+              // SNIPPET 2: Verify-modal chips should auto-fill tag from the chosen lot
+              body.querySelectorAll('#ndQuickPick button').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                  if (btn.dataset.tag) tagInput.value = btn.dataset.tag;
+                  if (btn.dataset.lot) {
+                    lotInput.value = btn.dataset.lot;
+                    // NEW: if no tag was on the chip, try to find one by lot
+                    if (!btn.dataset.tag) {
+                      const match = findTagForLot(btn.dataset.lot);
+                      if (match) tagInput.value = match.naturalTagId;
+                    }
+                  }
+                });
+              });
+            }
+          },0);
+
+          new bootstrap.Modal(document.getElementById('naturalDetectModal')).show();
+        }
+
+        /* ---------- Submit: NaturalDetect verification (exporter) ---------- */
+        function submitNaturalDetectVerification() {
+          const tagId = (document.getElementById('ndTagId').value || '').trim();
+          const lotId = (document.getElementById('ndLotId').value || '').trim();
+          if (!tagId && !lotId) {
+            showNotification('error', 'Missing Info', 'Enter a NaturalTag ID or Lot ID.');
+            return;
+          }
+
+          // Simulate result (instant)
+          const confidence = (95 + Math.random() * 4.5); // ~95—99.5%
+          const verification = {
+            verificationId: `ND-${Date.now()}`,
+            naturalTagId: tagId || null,
+            lotId: lotId || null,
+            verificationDate: new Date().toISOString(),
+            status: 'completed',
+            authenticity: 'authentic',
+            confidence,
+            verifiedBy: currentUser?.company?.name,
+            requestedBy: currentUser?.company?.name
+          };
+          (window.VeriPuraCoffeeData.naturalDetectVerifications ||= []).unshift(verification);
+
+          // Demo: auto "blockchain upload" + smart contract release
+          showNotification('success', 'Verification Complete', `Authentic. Confidence: ${confidence.toFixed(1)}%.`);
+          showNotification('info', 'Blockchain', 'Verification hash uploaded.');
+          showNotification('success', 'Payment Released', 'Smart contract conditions met. Payment released.');
+
+          // Small VERI fee for lab run (demo)
+          earnVeriTokens(-20, 'NaturalDetect verification fee');
+
+          bootstrap.Modal.getInstance(document.getElementById('naturalDetectModal'))?.hide();
+          loadRecentTests();
+
+          // 6) Lightweight NT refresh after NaturalDetect completes
+          if (document.getElementById('ordersSection')?.style.display !== 'none') {
+            loadOrders();                // if user is on Orders
+          } else {
+            updateOrdersNavNTBadge?.();  // quick nav badge refresh if elsewhere
+          }
+        }
+
+        // ---- DEMO SEEDER: Tests + NaturalTrace per existing orders ----
+        function seedDemoTests({ force = false } = {}) {
+          try {
+            if (window.__veriSeededTests && !force) return;
+            safeDataAccess(); // make sure arrays exist
+
+            const randBetween = (min, max) => Math.random() * (max - min) + min;
+            const iso = d => new Date(d).toISOString();
+            const addDays = (d, days) => { const nd = new Date(d); nd.setDate(nd.getDate() + days); return nd; };
+
+            (VeriPuraCoffeeData.orders || []).forEach((o, idx) => {
+              const lot = extractLotFromOrder(o) || `COF-${(new Date(o.created || Date.now())).getFullYear()}-${String(idx + 1).padStart(4, '0')}-0${(idx % 9) + 1}`;
+              const qty = parseInt(String(o.quantity).replace(/[^\d]/g, '')) || 500;
+
+              const fromType = getCompanyTypeByName(o.from);
+              const toType   = getCompanyTypeByName(o.to);
+              const coop     = fromType === 'cooperative' ? o.from : (toType === 'cooperative' ? o.to : null);
+              const exporter = fromType === 'exporter'   ? o.from : (toType === 'exporter'   ? o.to : null);
+              const roaster  = fromType === 'roaster'    ? o.from : (toType === 'roaster'    ? o.to : null);
+
+              const createdDate = new Date(o.created || Date.now());
+              const appliedDate = addDays(createdDate, 1);
+              const verifyDate  = addDays(createdDate, 2);
+              const testDate    = addDays(createdDate, 3);
+
+              // NaturalTag (co-op) + NaturalDetect (exporter/roaster)
+              if ((o.traceabilityMethod || '').toLowerCase().includes('natural')) {
+                if (!VeriPuraCoffeeData.naturalTagApplications.some(a => a.lotId === lot)) {
+                  VeriPuraCoffeeData.naturalTagApplications.unshift({
+                    naturalTagId: `NT-${lot.replace(/[^A-Z0-9]+/gi, '').toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                    lotId: lot,
+                    batchSizeKg: qty,
+                    process: 'washed',
+                    applicationDate: iso(appliedDate),
+                    status: 'applied',
+                    photoName: null,
+                    appliedBy: coop || exporter || o.from
+                  });
+                }
+
+                if (!VeriPuraCoffeeData.naturalDetectVerifications.some(v => v.lotId === lot)) {
+                  const tag = VeriPuraCoffeeData.naturalTagApplications.find(a => a.lotId === lot);
+                  VeriPuraCoffeeData.naturalDetectVerifications.unshift({
+                    verificationId: `ND-${Date.now()}-${idx}`,
+                    naturalTagId: tag ? tag.naturalTagId : null,
+                    lotId: lot,
+                    verificationDate: iso(verifyDate),
+                    status: 'completed',
+                    authenticity: 'authentic',
+                    confidence: Math.round(randBetween(96, 99.7) * 10) / 10,
+                    verifiedBy: exporter || roaster || o.to,
+                    requestedBy: exporter || roaster || o.to
+                  });
+                }
+              }
+
+              // Lab tests (quality / moisture / origin) – mark as completed for demo
+              const tester = coop || exporter || roaster || o.from;
+              const pushTest = (type, scoreFn) => {
+                VeriPuraCoffeeData.testRequests.unshift({
+                  id: `TEST-${type.toUpperCase()}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                  type,
+                  lotId: lot,
+                  variety: o.variety || 'Arabica',
+                  sampleSize: Math.round(randBetween(3, 8) * 10) / 10, // kg
+                  processing: 'washed',
+                  harvestDate: (o.created || new Date()).toString().slice(0, 10),
+                  farmOrigin: 'Da Lat Highlands',
+                  status: 'completed',
+                  created: iso(testDate),
+                  requestedBy: tester,
+                  score: scoreFn()
+                });
+              };
+
+              pushTest('quality',  () => Math.floor(randBetween(84, 92)));          // e.g., 84—91
+              pushTest('moisture', () => `${(randBetween(10.0, 12.0)).toFixed(1)}%`); // e.g., 10.5%
+              pushTest('origin',   () => 'Match');
+            });
+
+            window.__veriSeededTests = true; // idempotent
+          } catch (e) {
+            console.error('Seeding tests failed:', e);
+          }
+        }
 
         // --- PO flow & helpers ---
         const ALLOWED_TARGETS = {
@@ -1481,8 +2156,225 @@
             naturaltag: 'fas fa-dna',
             naturaldetect: 'fas fa-flask'
         };
+
+        // --- Natural Trace timeline helpers ---
+        const NAT_STAGE_ICON = {
+          tag_applied: 'fas fa-dna',
+          detect_verified: 'fas fa-flask',
+          handoff: 'fas fa-exchange-alt',
+          received: 'fas fa-warehouse',
+          payment_released: 'fas fa-money-check-alt'
+        };
+
+        // Simple registry for evidence lookups
+        const EvidenceRegistry = new Map(); // key -> {orderId, index}
+
+        function renderNatTimeline(order) {
+          if (!order || order.traceabilityMethod !== 'Natural Trace' || !order.nat || !Array.isArray(order.nat.timeline) || !order.nat.timeline.length) {
+            return '';
+          }
+          return `
+            <div class="thread-messages">
+              <h6 class="mb-3">Natural Trace Evidence</h6>
+              ${
+                order.nat.timeline.map((ev, i) => {
+                  const key = `${order.id}__${i}`;
+                  EvidenceRegistry.set(key, { orderId: order.id, index: i });
+
+                  let line = 'Evidence attached';
+                  try{
+                    if (ev.stage === 'tag_applied') {
+                      line = `Tag ID <strong>${escapeHTML(ev.evidence.tagId)}</strong>, Lot <strong>${escapeHTML(ev.evidence.lotId)}</strong>, Batch ${ev.evidence.batchSizeKg}kg`;
+                    } else if (ev.stage === 'detect_verified') {
+                      const conf = typeof ev.evidence.confidence === 'number' ? ev.evidence.confidence.toFixed(1) : escapeHTML(String(ev.evidence.confidence || ''));
+                      line = `Authenticity: <strong>${escapeHTML(ev.evidence.authenticity || 'unknown')}</strong> (${conf}%), Hash: <code>${escapeHTML(ev.evidence.hash || '')}</code>`;
+                    } else if (ev.stage === 'handoff') {
+                      line = `Handoff: ${escapeHTML(ev.evidence.from)} → ${escapeHTML(ev.evidence.to)} (${escapeHTML(ev.evidence.doc || 'doc')})`;
+                    } else if (ev.stage === 'received') {
+                      line = `Received at ${escapeHTML(ev.evidence.warehouse || 'warehouse')} (${ev.evidence.weightInKg}kg)`;
+                    } else if (ev.stage === 'payment_released') {
+                      const amt = typeof ev.evidence.amountUsd === 'number' ? ev.evidence.amountUsd.toLocaleString('en-US',{style:'currency',currency:'USD'}) : '';
+                      line = `Payment released ${escapeHTML(amt)} (tx ${escapeHTML(ev.evidence.tx || '')})`;
+                    }
+                  }catch(_){}
+
+                  return `
+                    <div class="thread-message">
+                      <div class="message-author">
+                        <i class="${NAT_STAGE_ICON[ev.stage] || 'fas fa-file-alt'} me-2"></i>
+                        ${escapeHTML(ev.stage.replace(/_/g, ' '))} • ${escapeHTML(ev.by || '')}
+                        <span class="message-time">${new Date(ev.ts).toLocaleString()}</span>
+                      </div>
+                      <div>${line}</div>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="openEvidence('${key}')">
+                          <i class="fas fa-file"></i> View Evidence
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')
+              }
+            </div>
+          `;
+        }
+
+        function openEvidence(key){
+          const ref = EvidenceRegistry.get(key);
+          if (!ref) return;
+          const order = (window.VeriPuraCoffeeData.orders || []).find(o => o.id === ref.orderId);
+          if (!order) return;
+          const ev = order?.nat?.timeline?.[ref.index];
+          if (!ev) return;
+
+          // Render a simple, robust evidence view
+          const body = document.getElementById('evidenceModalBody');
+          const pretty = (obj) => `<pre class="bg-light p-2 rounded border">${escapeHTML(JSON.stringify(obj, null, 2))}</pre>`;
+          let html = `
+            <div class="mb-2"><strong>Stage:</strong> ${escapeHTML(ev.stage)}</div>
+            <div class="mb-2"><strong>By:</strong> ${escapeHTML(ev.by || '')}</div>
+            <div class="mb-2"><strong>Timestamp:</strong> ${new Date(ev.ts).toLocaleString()}</div>
+            <div class="mb-2"><strong>Evidence:</strong></div>
+            ${pretty(ev.evidence || {})}
+          `;
+
+          body.innerHTML = html;
+          new bootstrap.Modal(document.getElementById('evidenceModal')).show();
+        }
+
+        function seedDemoNaturalTraceHistory() {
+          const companies = window.VeriPuraCoffeeData.companies;
+          const coop1 = companies['highland-cooperative'].name;
+          const coop2 = companies['mekong-coffee'].name;
+          const exporter = companies['vietnam-exports'].name;
+          const roaster = companies['specialty-roasters'].name;
+
+          const add = (o) => window.VeriPuraCoffeeData.orders.unshift(o);
+
+          // --- Chain 1 (COMPLETED end-to-end) ---
+          const chain1Lot = 'COF-2025-0801-01';
+          const chain1Tag = 'NT-COF-2025-080101-7342';
+
+          // Exporter -> Cooperative (procures upstream)
+          add({
+            id: 'CF-2025-010',
+            from: exporter, to: coop1,
+            variety: 'Arabica Typica',
+            quantity: '600 kg',
+            price: '$3,720', priceCents: 372000,
+            status: 'completed',
+            created: '2025-08-01', delivery: '2025-08-10',
+            traceabilityMethod: 'Natural Trace',
+            certifications: ['Organic', 'EUDR'],
+            thread: [
+              { author: exporter, msg: `PO placed to secure ${chain1Lot} Natural Trace lot`, ts: '2025-08-01 09:00' },
+              { author: coop1, msg: `NaturalTag applied to lot ${chain1Lot}`, ts: '2025-08-01 15:20' },
+              { author: exporter, msg: 'NaturalDetect verification completed', ts: '2025-08-02 11:10' },
+              { author: exporter, msg: 'Lot prepared and shipped to exporter facility', ts: '2025-08-03 16:00' },
+              { author: 'Smart Contract', msg: 'Payment released after verification', ts: '2025-08-04 09:00' },
+            ],
+            nat: {
+              timeline: [
+                { stage: 'tag_applied', by: coop1, ts:'2025-08-01T15:20:00Z', evidence:{ lotId: chain1Lot, tagId: chain1Tag, batchSizeKg:600 } },
+                { stage: 'handoff', by: coop1, ts:'2025-08-03T08:00:00Z', evidence:{ from: coop1, to: exporter, doc:'BOL #VN-33812' } },
+                { stage: 'detect_verified', by: exporter, ts:'2025-08-02T11:10:00Z', evidence:{ verificationId:'ND-1722597060', naturalTagId: chain1Tag, lotId: chain1Lot, authenticity:'authentic', confidence:98.6, hash:'0x7a9f…b3d' } },
+                { stage: 'payment_released', by: 'Smart Contract', ts:'2025-08-04T09:00:00Z', evidence:{ amountUsd: 3720.00, tx:'0x1be5…9cc' } }
+              ]
+            }
+          });
+
+          // Roaster -> Exporter (downstream sale), same tagged lot
+          add({
+            id: 'CF-2025-011',
+            from: roaster, to: exporter,
+            variety: 'Arabica Typica',
+            quantity: '580 kg',
+            price: '$4,176', priceCents: 417600,
+            status: 'completed',
+            created: '2025-08-06', delivery: '2025-08-15',
+            traceabilityMethod: 'Natural Trace',
+            certifications: ['Organic', 'EUDR', 'Fair Trade'],
+            thread: [
+              { author: roaster, msg: `PO submitted for ${chain1Lot} Natural Trace lot`, ts: '2025-08-06 10:45' },
+              { author: exporter, msg: 'Verification hash attached; goods in transit to roastery', ts: '2025-08-07 08:30' },
+              { author: roaster, msg: 'Lot received at Portland Roastery', ts: '2025-08-15 13:05' },
+              { author: 'Smart Contract', msg: 'Payment released to exporter', ts: '2025-08-15 14:10' },
+            ],
+            nat: {
+              timeline: [
+                { stage: 'handoff', by: exporter, ts:'2025-08-07T06:00:00Z', evidence:{ from: exporter, to: roaster, doc:'CMR #US-77321' } },
+                { stage: 'detect_verified', by: exporter, ts:'2025-08-06T12:00:00Z', evidence:{ verificationId:'ND-1722945600', naturalTagId: chain1Tag, lotId: chain1Lot, authenticity:'authentic', confidence:99.1, hash:'0x9cd4…a10' } },
+                { stage: 'received', by: roaster, ts:'2025-08-15T13:05:00Z', evidence:{ warehouse:'Portland Roastery', weightInKg: 579.2 } },
+                { stage: 'payment_released', by: 'Smart Contract', ts:'2025-08-15T14:10:00Z', evidence:{ amountUsd: 4176.00, tx:'0x4a7f…12a' } },
+              ]
+            }
+          });
+
+          // --- Chain 2 (in progress / testing) ---
+          const chain2Lot = 'COF-2025-0820-02';
+          const chain2Tag = 'NT-COF-2025-082002-5184';
+
+          add({
+            id: 'CF-2025-012',
+            from: companies['vietnam-exports'].name, to: coop2,
+            variety: 'Arabica Bourbon',
+            quantity: '400 kg', price: '$2,520', priceCents: 252000,
+            status: 'testing', created:'2025-08-20', delivery:'2025-09-05',
+            traceabilityMethod: 'Natural Trace',
+            certifications: ['EUDR'],
+            thread: [
+              { author: exporter, msg: `PO placed; NaturalTag requested for lot ${chain2Lot}`, ts:'2025-08-20 09:15' },
+              { author: coop2, msg: `NaturalTag applied to lot ${chain2Lot}`, ts:'2025-08-20 16:00' },
+              { author: 'VeriPura Labs', msg: 'NaturalDetect verification queued', ts:'2025-08-21 09:00' },
+            ],
+            nat: {
+              timeline: [
+                { stage:'tag_applied', by: coop2, ts:'2025-08-20T16:00:00Z', evidence: { lotId: chain2Lot, tagId: chain2Tag, batchSizeKg: 400 } }
+              ]
+            }
+          });
+
+          add({
+            id: 'CF-2025-013',
+            from: roaster, to: exporter,
+            variety: 'Catimor',
+            quantity: '350 kg', price:'$2,275', priceCents:227500,
+            status: 'active', created:'2025-08-22', delivery:'2025-09-10',
+            traceabilityMethod: 'Natural Trace',
+            certifications: ['Rainforest Alliance'],
+            thread: [
+              { author: roaster, msg: 'PO submitted with Natural Trace requirement', ts:'2025-08-22 12:10' },
+              { author: exporter, msg: 'Awaiting upstream verification', ts:'2025-08-23 08:05' },
+            ],
+            nat: { timeline: [] }
+          });
+
+          // Contrast: a completed standard order
+          add({
+            id: 'CF-2025-014',
+            from: roaster, to: exporter,
+            variety: 'Robusta',
+            quantity: '500 kg', price:'$1,900', priceCents:190000,
+            status: 'completed', created:'2025-07-25', delivery:'2025-08-01',
+            traceabilityMethod: 'Standard',
+            certifications: [],
+            thread: [
+              { author: roaster, msg:'Standard batch tracking order created', ts:'2025-07-25 09:10' },
+              { author: exporter, msg:'Delivered and closed', ts:'2025-08-01 17:00' },
+            ]
+          });
+        }
+
         function escapeHTML(s) {
             return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+        }
+
+        // 4) Align price formatting everywhere
+        function formatOrderPrice(o){
+          const cents = (typeof o.priceCents === 'number' && Number.isFinite(o.priceCents))
+            ? o.priceCents
+            : Math.round(parseFloat(String(o.price||'').replace(/[^\d.]/g,''))*100)||0;
+          return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100);
         }
 
         // Who this org can issue POs to
@@ -1541,11 +2433,30 @@
         // Initialize data safety immediately after definition
         safeDataAccess();
 
+        // FIXED: Move backfillChainReceipts to top-level scope with retry logic
+        async function backfillChainReceipts(retry = 0){
+          if (window.__vpBackfilled) return;
+          const list = (window.VeriPuraCoffeeData?.naturalDetectVerifications)||[];
+          if (!Array.isArray(list)) return;
+
+          // wait until the helper is available
+          if (!window.vpAnchorVerification){
+            const delay = Math.min(1000, 100 * (retry+1));
+            return setTimeout(() => backfillChainReceipts(retry+1), delay);
+          }
+
+          const missing = list.filter(v => v.status==='completed' && !v.chainReceipt);
+          for (const v of missing){
+            try { await window.vpAnchorVerification(v, { silent: true }); } catch(e){}
+          }
+          window.__vpBackfilled = true;
+        }
+
         let currentUser = null;
         let selectedTestType = null;
         let navBound = false;
 
-        // Authentication
+        // Authentication - THE FIX: Properly bind the event listener on page load
         function handleAuth(event) {
             event.preventDefault();
             const companyId = document.getElementById('company').value;
@@ -1559,6 +2470,7 @@
             const company = window.VeriPuraCoffeeData.companies[companyId];
             if (company && company.password === password) {
                 currentUser = { company: company, role: { name: 'Demo User' } };
+                window.currentUser = currentUser; 
                 showDashboard();
             } else {
                 showNotification('error', 'Authentication Failed', 'Invalid credentials. Hint: 123');
@@ -1579,6 +2491,9 @@
             loadDashboardStats();
             loadRecentActivity();
             setupNavigation();
+            
+            // Call updateNatFab after login (Snippet 4)
+            updateNatFab();
         }
 
         function logout() {
@@ -1589,6 +2504,9 @@
             
             // Clean up org type attribute
             document.body.removeAttribute('data-org-type');
+            
+            // Hide FAB on logout (Snippet 4)
+            document.getElementById('ntFab')?.classList.remove('show');
             
             // Reset nav highlight to Dashboard
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -1624,8 +2542,9 @@
                         b.title = canIssue ? '' : 'Your organization type cannot issue purchase orders.';
                     });
                     loadOrders();
+                    autoOpenFeaturedOnce();   // SNIPPET 4: NEW
                 }
-                if (sectionName === 'quality') loadRecentTests();
+                if (sectionName === 'quality') { renderNaturalTraceActions(); loadRecentTests(); }
             }
         }
 
@@ -1766,7 +2685,7 @@
             document.getElementById('poBasePrice').value = '5.50';
             document.getElementById('poDeliveryDate').value = '';
 
-            // Reset traceability & certifications…
+            // Reset traceability & certifications
             document.getElementById('standardTrace').checked = true;
             document.getElementById('naturalTrace').checked = false;
             document.querySelectorAll('.traceability-option').forEach(o => o.classList.remove('selected'));
@@ -1867,11 +2786,11 @@
             const veriCost = Math.floor(totalCost * 0.1); // 10% of order value in VERI tokens
             
             // Update displays
-            document.getElementById('baseCostDisplay').textContent = `$${baseCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('traceabilityPremiumDisplay').textContent = `$${traceabilityPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('certificationPremiumDisplay').textContent = `$${certificationPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('deliveryPremiumDisplay').textContent = `$${deliveryPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('totalCostDisplay').textContent = `$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('baseCostDisplay').textContent = `${baseCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('traceabilityPremiumDisplay').textContent = `${traceabilityPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('certificationPremiumDisplay').textContent = `${certificationPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('deliveryPremiumDisplay').textContent = `${deliveryPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('totalCostDisplay').textContent = `${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             document.getElementById('veriCostDisplay').textContent = `${veriCost.toLocaleString()} VERI`;
             
             updateROIBenefits(totalCost, traceabilityPremium);
@@ -1910,11 +2829,11 @@
                 roiBenefits.innerHTML = `
                     <div class="benefit-line">
                         <i class="fas fa-chart-line text-success me-2"></i>
-                        <span>Brand premium potential: <strong>$${brandPremiumMin.toLocaleString()}-${brandPremiumMax.toLocaleString()}</strong></span>
+                        <span>Brand premium potential: <strong>${brandPremiumMin.toLocaleString()}-${brandPremiumMax.toLocaleString()}</strong></span>
                     </div>
                     <div class="benefit-line">
                         <i class="fas fa-shield-alt text-primary me-2"></i>
-                        <span>Fraud protection value: <strong>$${fraudProtectionMin.toLocaleString()}-${fraudProtectionMax.toLocaleString()}</strong></span>
+                        <span>Fraud protection value: <strong>${fraudProtectionMin.toLocaleString()}-${fraudProtectionMax.toLocaleString()}</strong></span>
                     </div>
                     <div class="benefit-line">
                         <i class="fas fa-users text-warning me-2"></i>
@@ -2016,8 +2935,8 @@
                 to: supplierName,
                 variety: variety,
                 quantity: quantity + ' kg',
-                price: `$${totalCostNumber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                priceCents: priceCents,            // <-- NEW: numeric for sorting/analytics
+                price: `${totalCostNumber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                priceCents: priceCents,            
                 status: 'pending',
                 traceabilityMethod: isNaturalTrace ? 'Natural Trace' : 'Standard',
                 certifications: certifications,
@@ -2075,11 +2994,53 @@
             }, 3000);
         }
 
-        // Threaded Orders System
+        // UPDATED: Threaded Orders System with Spotlight Integration
         function loadOrders() {
-            const currentCompanyName = currentUser.company.name;
+            // Load NT filter from session
+            loadNTFilterFromSession();
+            
+            // --- BEGIN robust name + list logic ---
+            const me = (window.currentUser || (typeof currentUser !== 'undefined' ? currentUser : null));
+            const myName = (me && me.company && me.company.name) ? me.company.name.trim().replace(/\s+/g,' ') : '';
+            const norm = s => String(s || '').trim().replace(/\s+/g, ' ');
+
+            const allOrders = (window.VeriPuraCoffeeData && Array.isArray(VeriPuraCoffeeData.orders))
+              ? VeriPuraCoffeeData.orders
+              : [];
+
+            let sent = allOrders.filter(o => norm(o.from) === myName);
+            let received = allOrders.filter(o => norm(o.to) === myName);
+
+            // Apply NT filter if active
+            if (ntFilterOn) {
+                const pred = isNTCompleted;
+                sent = sent.filter(pred);
+                received = received.filter(pred);
+            }
+
+            // Counters
+            const c1 = document.getElementById('firstOrderCount');
+            const c2 = document.getElementById('secondOrderCount');
+            if (c1) c1.textContent = sent.length;
+            if (c2) c2.textContent = received.length;
+
+            // Render lists (reuse your existing renderer)
+            const renderList = (mountId, arr, section) => {
+              const mount = document.getElementById(mountId);
+              if (!mount) return;
+              if (!arr.length) {
+                mount.innerHTML = '<div class="text-muted small p-3">No orders yet.</div>';
+                return;
+              }
+              mount.innerHTML = arr.map(o => createThreadedOrderItem(o, section)).join('');
+            };
+
+            renderList('firstOrdersList', sent, 'first');
+            renderList('secondOrdersList', received, 'second');
+            // --- END robust name + list logic ---
+
+            // Keep the rest of the function for labels and icons
             const currentCompanyType = currentUser.company.type;
-            const orders = window.VeriPuraCoffeeData.orders;
             
             // Determine section labels based on company type
             let firstSectionLabel, firstSectionIcon;
@@ -2095,23 +3056,9 @@
             document.getElementById('firstSectionLabel').textContent = firstSectionLabel;
             document.querySelector('#firstSectionTitle i').className = `${firstSectionIcon} me-2 text-success`;
             
-            // Filter orders based on current user's perspective
-            const firstSectionOrders = orders.filter(order => order.from === currentCompanyName);
-            const secondSectionOrders = orders.filter(order => order.to === currentCompanyName);
-            
-            // Update section counters
-            document.getElementById('firstOrderCount').textContent = firstSectionOrders.length;
-            document.getElementById('secondOrderCount').textContent = secondSectionOrders.length;
-            
-            // Populate first section orders
-            document.getElementById('firstOrdersList').innerHTML = firstSectionOrders.length > 0 ? 
-                firstSectionOrders.map(order => createThreadedOrderItem(order, 'first')).join('') :
-                `<div class="p-4 text-center text-muted"><i class="${firstSectionIcon} fa-2x mb-2"></i><p>No ${firstSectionLabel.toLowerCase()}</p></div>`;
-            
-            // Populate second section orders
-            document.getElementById('secondOrdersList').innerHTML = secondSectionOrders.length > 0 ? 
-                secondSectionOrders.map(order => createThreadedOrderItem(order, 'second')).join('') :
-                '<div class="p-4 text-center text-muted"><i class="fa-solid fa-inbox fa-2x mb-2"></i><p>No received orders</p></div>';
+            // Spotlight removed - no-op calls
+            renderNTSpotlightBar();
+            updateOrdersNavNTBadge();
         }
         
         function createThreadedOrderItem(order, section) {
@@ -2176,7 +3123,7 @@
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Total Value</div>
-                                <div class="detail-value">${escapeHTML(order.price)}</div>
+                                <div class="detail-value">${formatOrderPrice(order)}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">${partnerLabel.slice(0, -1)}</div>
@@ -2210,16 +3157,28 @@
                                 ${threadMessages}
                             </div>` : ''}
 
+                        ${renderNatTimeline(order)}
+
                         <div class="order-actions">
-                            <button class="btn btn-sm btn-outline-primary" onclick="addOrderMessage('${escapeHTML(order.id)}')">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="addOrderMessage('${escapeHTML(order.id)}')"
+                                    aria-label="Add message to order ${escapeHTML(order.id)}">
                                 <i class="fa-solid fa-comment me-1"></i>Add Message
                             </button>
-                            <button class="btn btn-sm btn-outline-success">
+                            <!-- 5) View Full Details hidden for now -->
+                            <!--<button class="btn btn-sm btn-outline-success">
                                 <i class="fa-solid fa-eye me-1"></i>View Full Details
+                            </button>-->
+                            <button class="btn btn-sm btn-outline-dark" 
+                                    onclick="openComplianceReport('${escapeHTML(order.id)}')"
+                                    aria-label="Open compliance report for order ${escapeHTML(order.id)}">
+                                <i class="fa-solid fa-clipboard-check me-1"></i>Compliance Report
                             </button>
                             ${order.traceabilityMethod === 'Natural Trace' ? `
-                                <button class="btn btn-sm btn-outline-warning">
-                                    <i class="fa-solid fa-dna me-1"></i>Natural Trace Status
+                                <button class="btn btn-sm btn-outline-warning" 
+                                        onclick="openNaturalTraceForOrder('${escapeHTML(order.id)}')"
+                                        aria-label="Open Natural Trace actions for order ${escapeHTML(order.id)}">
+                                    <i class="fa-solid fa-dna me-1"></i>Natural Trace
                                 </button>` : ''}
                         </div>
                     </div>
@@ -2314,181 +3273,534 @@
             selectedTestType = testType;
             document.querySelectorAll('.test-card').forEach(card => card.classList.remove('selected'));
             document.querySelector(`.${testType}-test`).classList.add('selected');
+            
+            const protocol = window.VeriPuraCoffeeData.testProtocols[testType];
+            if (protocol) {
+                document.getElementById('baseCost').textContent = `${protocol.baseCost.min}-${protocol.baseCost.max} VERI`;
+            }
         }
 
         function submitTestRequest() {
-            if (!selectedTestType || !document.getElementById('lotId').value) {
-                showNotification('error', 'Validation Error', 'Please fill in all required fields');
+            if (!selectedTestType) {
+                showNotification('error', 'Selection Required', 'Please select a test type');
                 return;
             }
             
-            const testId = `TEST-${selectedTestType.toUpperCase()}-${Date.now()}`;
+            const lotId = document.getElementById('lotId').value;
+            const variety = document.getElementById('variety').value;
+            const sampleSize = document.getElementById('sampleSize').value;
+            
+            if (!lotId || !variety || !sampleSize) {
+                showNotification('error', 'Missing Information', 'Please fill in all required fields');
+                return;
+            }
+            
+            // Generate test request ID
+            const testId = `TEST-${Date.now()}`;
+            
+            const testRequest = {
+                id: testId,
+                type: selectedTestType,
+                lotId: lotId,
+                variety: variety,
+                sampleSize: parseFloat(sampleSize),
+                processing: document.getElementById('processing').value,
+                harvestDate: document.getElementById('harvestDate').value,
+                farmOrigin: document.getElementById('farmOrigin').value,
+                status: 'pending',
+                created: new Date().toISOString(),
+                requestedBy: currentUser.company.name
+            };
+            
+            // Add to test requests array
+            window.VeriPuraCoffeeData.testRequests.unshift(testRequest);
+            
+            // Calculate and deduct VERI cost
             const protocol = window.VeriPuraCoffeeData.testProtocols[selectedTestType];
-            const cost = Math.floor(Math.random() * 20) + 35;
+            const cost = Math.floor(Math.random() * (protocol.baseCost.max - protocol.baseCost.min + 1)) + protocol.baseCost.min;
+            earnVeriTokens(-cost, `${protocol.name} test request`);
             
-            window.VeriPuraCoffeeData.testRequests.push({
-                testId: testId,
-                testType: selectedTestType,
-                lotId: document.getElementById('lotId').value,
-                status: 'processing',
-                requestDate: new Date().toISOString(),
-                cost: cost,
-                score: Math.floor(Math.random() * 20) + 75
-            });
-            
-            // Save state after adding test request
-            saveState();
-            
+            // Close modal
             bootstrap.Modal.getInstance(document.getElementById('coffeeTestModal')).hide();
             
+            // Show success notification
             showNotification('success', 'Test Request Submitted', 
-                `Test request ${testId} submitted successfully.`);
+                `${protocol.name} test ${testId} submitted successfully. Cost: ${cost} VERI tokens`);
             
-            earnVeriTokens(-cost, `${protocol.name} testing fee`);
+            // Refresh displays
+            loadRecentTests();
+            loadDashboardStats();
             
+            // Simulate test processing
             setTimeout(() => {
-                const testRequest = window.VeriPuraCoffeeData.testRequests.find(t => t.testId === testId);
-                if (testRequest) {
-                    testRequest.status = 'completed';
-                    earnVeriTokens(35, 'Test completion bonus');
-                    saveState(); // Save after test completion
-                    showNotification('success', 'Test Complete', `${testId}: Results available`);
+                const test = window.VeriPuraCoffeeData.testRequests.find(t => t.id === testId);
+                if (test) {
+                    test.status = 'processing';
+                    showNotification('info', 'Test Update', `${testId}: Sample processing started`);
                     loadRecentTests();
                 }
-            }, 3000);
+            }, 2000);
             
-            loadRecentTests();
+            setTimeout(() => {
+                const test = window.VeriPuraCoffeeData.testRequests.find(t => t.id === testId);
+                if (test) {
+                    test.status = 'completed';
+                    test.score = Math.floor(Math.random() * 20) + 80; // 80-99 score
+                    showNotification('success', 'Test Complete', `${testId}: Results available. Score: ${test.score}/100`);
+                    loadRecentTests();
+                }
+            }, 8000);
         }
 
+        // Load recent tests for the quality section - UPDATED WITH FIX
         function loadRecentTests() {
             const tableBody = document.querySelector('#recentTestsTable tbody');
             if (!tableBody) return;
-            
-            // Ensure arrays exist before mapping
-            const testRequests = window.VeriPuraCoffeeData.testRequests || [];
-            const naturalTagApplications = window.VeriPuraCoffeeData.naturalTagApplications || [];
-            const naturalDetectVerifications = window.VeriPuraCoffeeData.naturalDetectVerifications || [];
-            
-            // Combine all test types for display
+
+            const meName = currentUser?.company?.name || '';
+            const norm = s => String(s || '').trim().replace(/\s+/g, ' ');
+
+            // Lots from orders where you're either the buyer or the seller
+            const myLots = new Set(
+                (window.VeriPuraCoffeeData.orders || [])
+                    .filter(o => norm(o.from) === norm(meName) || norm(o.to) === norm(meName))
+                    .map(extractLotFromOrder)
+                    .filter(Boolean)
+            );
+
             const allTests = [
-                ...testRequests.map(test => ({
-                    id: test.testId,
-                    type: test.testType,
-                    status: test.status,
-                    date: test.requestDate,
-                    score: test.score,
-                    category: 'standard'
-                })),
-                ...naturalTagApplications.map(app => ({
-                    id: app.naturalTagId,
+                ...window.VeriPuraCoffeeData.testRequests,
+                ...window.VeriPuraCoffeeData.naturalTagApplications.map(nta => ({
+                    id: nta.naturalTagId,
                     type: 'naturaltag',
-                    status: app.status,
-                    date: app.applicationDate,
-                    score: app.status === 'verified' ? 'APPLIED' : 'PENDING',
-                    category: 'naturaltag'
+                    status: nta.status,
+                    created: nta.applicationDate,
+                    score: 'Applied',
+                    requestedBy: nta.appliedBy,
+                    lotId: nta.lotId
                 })),
-                ...naturalDetectVerifications.map(ver => ({
-                    id: ver.verificationId,
+                ...window.VeriPuraCoffeeData.naturalDetectVerifications.map(ndv => ({
+                    id: ndv.verificationId,
                     type: 'naturaldetect',
-                    status: ver.status,
-                    date: ver.verificationDate,
-                    score: ver.status === 'completed' ? 
-                        (ver.authenticity === 'authentic' ? `${ver.confidence.toFixed(1)}%` : 'FAILED') : 'PENDING',
-                    category: 'naturaldetect'
+                    status: ndv.status,
+                    created: ndv.verificationDate,
+                    score: ndv.authenticity === 'authentic' ? `${ndv.confidence.toFixed(1)}%` : 'Failed',
+                    requestedBy: ndv.verifiedBy || ndv.requestedBy || currentUser?.company?.name,
+                    lotId: ndv.lotId || null
                 }))
             ];
-            
-            // Sort by date (most recent first)
-            allTests.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            const recentTests = allTests.slice(0, 5);
-            
-            tableBody.innerHTML = recentTests.length > 0 ? recentTests.map(test => {
-                const typeLabel = test.type === 'naturaltag' ? 'NATURALTAG'
-                                : test.type === 'naturaldetect' ? 'NATURALDETECT'
-                                : test.type.toUpperCase();
-                const iconClass = ICONS[test.type] || 'fas fa-flask';
-                
+
+            // ✅ Show your own requests OR any test linked to a lot on your orders
+            const recentTests = allTests
+                .filter(t => norm(t.requestedBy) === norm(meName) || (t.lotId && myLots.has(t.lotId)))
+                .sort((a, b) => new Date(b.created) - new Date(a.created))
+                .slice(0, 10);
+
+            if (recentTests.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No recent tests found.</td></tr>';
+                return;
+            }
+
+            const ICONS = {
+                quality: 'fas fa-star',
+                moisture: 'fas fa-tint',
+                origin: 'fas fa-map-marker-alt',
+                naturaltag: 'fas fa-dna',
+                naturaldetect: 'fas fa-flask'
+            };
+
+            tableBody.innerHTML = recentTests.map(test => {
+                const statusKey = String(test.status || '').toLowerCase();
+                const allowed = { pending:1, processing:1, completed:1, applied:1 };
+                const statusClass = allowed[statusKey] ? statusKey : 'pending';
+
+                const proto = window.VeriPuraCoffeeData.testProtocols[test.type] || 
+                    { name: test.type === 'naturaltag' ? 'NaturalTag' : 'NaturalDetect', icon: ICONS[test.type] || 'fas fa-flask' };
+
                 return `
                     <tr>
-                        <td><small>${test.id}</small></td>
-                        <td><i class="${iconClass} me-1"></i>${typeLabel}</td>
-                        <td><span class="status-badge status-${test.status}">${test.status.toUpperCase()}</span></td>
-                        <td><small>${new Date(test.date).toLocaleDateString()}</small></td>
-                        <td>${test.score}</td>
-                        <td><button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button></td>
+                        <td><strong>${escapeHTML(test.id)}</strong></td>
+                        <td><i class="${proto.icon} me-2"></i>${escapeHTML(proto.name)}</td>
+                        <td><span class="status-badge status-${statusClass}">${statusClass.toUpperCase()}</span></td>
+                        <td>${new Date(test.created).toLocaleDateString()}</td>
+                        <td><strong>${escapeHTML(test.score || 'Pending')}</strong></td>
+                        <td><button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-eye"></i></button></td>
                     </tr>
                 `;
-            }).join('') : '<tr><td colspan="6" class="text-center py-3">No recent tests.</td></tr>';
-            
-            // Update total tests count
-            document.getElementById('totalTestsCount').textContent = allTests.length;
+            }).join('');
         }
 
-        // Utility Functions
+        // Notification system
         function showNotification(type, title, message) {
             const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) return;
+
+            // Create toast element
             const toastId = 'toast-' + Date.now();
-            
+            const bgClass = {
+                success: 'bg-success',
+                error: 'bg-danger', 
+                info: 'bg-info',
+                warning: 'bg-warning'
+            }[type] || 'bg-primary';
+
             const toastHTML = `
-                <div id="${toastId}" class="toast" role="alert">
-                    <div class="toast-header bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} text-white">
-                        <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-                        <strong class="me-auto">${title}</strong>
+                <div id="${toastId}" class="toast ${bgClass} text-white" role="alert" data-bs-delay="4000">
+                    <div class="toast-header ${bgClass} text-white border-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong class="me-auto">${escapeHTML(title)}</strong>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
                     </div>
-                    <div class="toast-body">${message}</div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
                 </div>
             `;
-            
+
             toastContainer.insertAdjacentHTML('beforeend', toastHTML);
             const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 5000 });
+            const toast = new bootstrap.Toast(toastElement);
             toast.show();
-            
-            toastElement.addEventListener('hidden.bs.toast', function() { this.remove(); });
+
+            // Clean up after toast hides
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
         }
 
-        // Initialize
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            // Ensure all data arrays are properly initialized first
-            safeDataAccess();
-            normalizeSeedOrders();
-            normalizePriceCents();
-            
+            // THE FIX: Bind the auth form handler on page load
             const authForm = document.getElementById('authForm');
             if (authForm) {
                 authForm.addEventListener('submit', handleAuth);
             }
+
+            // Initialize other components
+            safeDataAccess();
+
+            // ➜ Add this line:
+            seedDemoNaturalTraceHistory();
             
-            // Only load recent tests after ensuring data safety
-            try {
-                loadRecentTests();
-            } catch (error) {
-                console.log('Initial test load skipped - data not ready');
+            // Call seedDemoTests after existing seeding
+            seedDemoTests();
+
+            // FIXED: Call backfillChainReceipts once on DOMContentLoaded (with retry logic)
+            backfillChainReceipts();
+
+            normalizeSeedOrders();
+            normalizePriceCents();
+            
+            // Set up floating token counter click handler
+            const floatingCounter = document.getElementById('floatingTokenCounter');
+            if (floatingCounter) {
+                floatingCounter.addEventListener('click', function() {
+                    showNotification('info', 'VERI Balance', 
+                        'VERI tokens are earned through quality testing, Natural Trace applications, and supply chain participation.');
+                });
             }
-            
-            // Fix accessibility: Clear focus when modals are hidden
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                // Clear focus before hiding
-                modal.addEventListener('hide.bs.modal', function() {
-                    // Remove focus from any focused element within the modal
-                    const focusedElements = this.querySelectorAll(':focus');
-                    focusedElements.forEach(el => el.blur());
-                });
-                
-                // Clean up after hidden
-                modal.addEventListener('hidden.bs.modal', function() {
-                    // Additional cleanup - remove any lingering focus
-                    const allFocusable = this.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-                    allFocusable.forEach(el => el.blur());
-                    
-                    // Move focus back to body to prevent focus trap
-                    document.body.focus();
-                });
-            });
         });
     </script>
-</body>
+
+    <!-- Compliance & Natural Trace Report Script -->
+    <script>
+        (function(){
+          // Use existing helpers: extractLotFromOrder(order), findTagForLot(lotId), escapeHTML(), showNotification()
+
+          function findLatestVerificationForLot(lot){
+            const arr = (window.VeriPuraCoffeeData?.naturalDetectVerifications) || [];
+            if (!lot) return null;
+            return arr
+              .filter(v => v.lotId === lot)
+              .sort((a,b) => new Date(b.verificationDate||0) - new Date(a.verificationDate||0))[0] || null;
+          }
+
+          function badge(txt, ok=true){
+            return `<span class="badge ${ok?'bg-success':'bg-secondary'} me-2">${escapeHTML(String(txt))}</span>`;
+          }
+
+          window.openComplianceReport = async function(orderId){
+            const orders = (window.VeriPuraCoffeeData?.orders)||[];
+            const o = orders.find(x=>x.id===orderId);
+            if (!o){ showNotification?.('error','Not found','Order not found'); return; }
+
+            const lot = extractLotFromOrder(o) || null;
+            const tag = lot ? findTagForLot(lot) : null;
+            const ver = lot ? findLatestVerificationForLot(lot) : null;
+
+            // FIXED: Make the report quiet by using silent: true
+            if (ver && !ver.chainReceipt && window.vpAnchorVerification){
+              try { await window.vpAnchorVerification(ver, { silent: true }); } catch(e){}
+            }
+
+            const hasNT = /natural/i.test(o.traceabilityMethod||'');
+            const ntStatus = hasNT
+              ? (ver ? badge(`Verified • ${Number(ver.confidence||0).toFixed(1)}%`)
+                     : tag ? badge('Tag Applied', false)
+                     : badge('Planned', false))
+              : badge('Standard Tracking', false);
+
+            const proof = ver?.chainReceipt
+              ? `
+                <div class="mt-2 small">
+                  <div><b>Chain:</b> ${escapeHTML(ver.chainReceipt.chain)}</div>
+                  <div><b>Tx:</b> <code>${escapeHTML(ver.chainReceipt.txHash.slice(0,18))}…</code></div>
+                  <div><b>Proof:</b> <code>${escapeHTML(ver.chainReceipt.proofHash.slice(0,18))}…</code></div>
+                  <div><b>Anchored:</b> ${new Date(ver.chainReceipt.anchoredAt).toLocaleString()}</div>
+                </div>`
+              : `<div class="small text-muted">No proof anchored yet.</div>`;
+
+            const certs = (o.certifications && o.certifications.length)
+              ? o.certifications.map(c=>`<span class="badge bg-success me-1">${escapeHTML(c)}</span>`).join('')
+              : '<span class="text-muted">None</span>';
+
+            const recallReady = hasNT && (ver || tag)
+              ? `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Lot-level trace enabled</span>`
+              : `<span class="text-muted"><i class="fas fa-minus-circle me-1"></i>Standard recall procedures</span>`;
+
+            const body = `
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <div class="content-card p-3" style="border:1px solid var(--border-light); border-radius:12px;">
+                    <h6 class="mb-2 text-muted">Order</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                      <div><b>ID:</b> ${escapeHTML(o.id)}</div>
+                      <div><b>Variety:</b> ${escapeHTML(o.variety||'')}</div>
+                      <div><b>Qty:</b> ${escapeHTML(o.quantity||'')}</div>
+                      <div><b>Total:</b> ${formatOrderPrice(o)}</div>
+                    </div>
+                    <div class="mt-2 small">
+                      <div><b>From:</b> ${escapeHTML(o.from||'')} &nbsp; <b>To:</b> ${escapeHTML(o.to||'')}</div>
+                      <div><b>Order Date:</b> ${o.created?new Date(o.created).toLocaleDateString():'—'} &nbsp; <b>Delivery:</b> ${o.delivery?new Date(o.delivery).toLocaleDateString():'—'}</div>
+                    </div>
+                    <hr>
+                    <div><b>Certifications:</b> ${certs}</div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="content-card p-3" style="border:1px solid var(--border-light); border-radius:12px;">
+                    <h6 class="mb-2 text-muted">Traceability</h6>
+                    <div><b>Method:</b> ${escapeHTML(o.traceabilityMethod||'Standard')}</div>
+                    <div class="mt-2"><b>Natural Trace:</b> ${ntStatus}</div>
+                    <div class="mt-2"><b>Lot:</b> ${lot ? escapeHTML(lot) : '<span class="text-muted">—</span>'}</div>
+                    ${ver ? `<div class="mt-2"><b>Authenticity:</b> <span class="badge bg-success">Authentic</span></div>` : ''}
+                    <hr>
+                    <div><b>Recall readiness:</b> ${recallReady}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="content-card p-3 mt-3" style="border:1px solid var(--border-light); border-radius:12px;">
+                <h6 class="mb-2"><i class="fas fa-link me-2"></i>Proof of Verification</h6>
+                ${proof}
+                <div class="mt-3 d-flex gap-2">
+                  ${ver?.chainReceipt ? `
+                    <button class="btn btn-outline-dark btn-sm" onclick="navigator.clipboard.writeText('${ver.chainReceipt.txHash}')">
+                      <i class="fas fa-copy me-1"></i>Copy Tx
+                    </button>` : ''}
+                  ${!ver && hasNT ? `
+                    <button class="btn btn-outline-warning btn-sm" onclick="openNaturalDetectModal({ lot: ${JSON.stringify(lot||'')} })">
+                      <i class="fas fa-flask me-1"></i>Run Verification
+                    </button>` : ''}
+                  ${!tag && hasNT ? `
+                    <button class="btn btn-outline-warning btn-sm" onclick="openNaturalTagModal({ lot: ${JSON.stringify(lot||'')}, poId: ${JSON.stringify(o.id)} })">
+                      <i class="fas fa-dna me-1"></i>Apply NaturalTag
+                    </button>` : ''}
+                </div>
+              </div>
+            `;
+
+            const mount = document.getElementById('crBody');
+            if (mount) mount.innerHTML = body;
+            new bootstrap.Modal(document.getElementById('complianceReportModal')).show();
+          };
+        })();
+    </script>
+
+    <!-- Natural Trace Demo Enhancements Script -->
+    <script>
+        // ===== Natural Trace Demo Enhancements (no backend) =====
+        (() => {
+          const DEMO_KEY = 'veripura-demo-state:v1';
+          const LATENCY = { min: 250, max: 800 };
+
+          const state = () => (window.VeriPuraCoffeeData = window.VeriPuraCoffeeData || {});
+          const delay = (ms) => new Promise(r => setTimeout(r, ms));
+          const jitter = () => Math.floor(LATENCY.min + Math.random()*(LATENCY.max - LATENCY.min));
+
+          // --- Persistence (localStorage) ---
+          function loadState() {
+            try {
+              const raw = localStorage.getItem(DEMO_KEY);
+              if (!raw) return;
+              const saved = JSON.parse(raw);
+              const tgt = state();
+
+              // Merge carefully so your seed data stays as fallback
+              const merge = (k) => { if (saved[k] && typeof saved[k] === typeof tgt[k]) tgt[k] = saved[k]; };
+              ['testRequests','naturalTagApplications','naturalDetectVerifications','orders','veriBalances'].forEach(merge);
+            } catch (e) { console.warn('Demo load failed', e); }
+          }
+          function saveState() {
+            try {
+              const s = state();
+              const toSave = {
+                testRequests: s.testRequests || [],
+                naturalTagApplications: s.naturalTagApplications || [],
+                naturalDetectVerifications: s.naturalDetectVerifications || [],
+                orders: s.orders || [],
+                veriBalances: s.veriBalances || {}
+              };
+              localStorage.setItem(DEMO_KEY, JSON.stringify(toSave));
+            } catch (e) { console.warn('Demo save failed', e); }
+          }
+          // Expose to your existing code (you already call saveState() in a few places)
+          window.saveState = saveState;
+
+          // Load on boot, then your own DOMContentLoaded runs next
+          loadState();
+
+          // --- Deterministic confidence from tag/lot (stable per id) ---
+          function stableConfidence(seedStr = '') {
+            // tiny LCG seeded by char codes (no external libs)
+            let seed = 0;
+            for (let i=0;i<seedStr.length;i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+            const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2**32;
+            // 95.0—99.7 range
+            return 95 + rnd()*4.7;
+          }
+
+          // --- Proof hashing (browser SHA-256) ---
+          async function sha256Hex(str) {
+            const buf = new TextEncoder().encode(str);
+            const digest = await crypto.subtle.digest('SHA-256', buf);
+            return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+          }
+          async function anchorVerification(verObj, opts = {}) {
+            const { silent = false } = opts;
+
+            const payload = {
+              naturalTagId: verObj.naturalTagId || '',
+              lotId: verObj.lotId || '',
+              authenticity: verObj.authenticity || 'authentic',
+              confidence: verObj.confidence || 0,
+              at: verObj.verificationDate || new Date().toISOString()
+            };
+            const hex = await sha256Hex(JSON.stringify(payload));
+            const txHash = '0x' + hex.slice(0, 64);
+            verObj.chainReceipt = {
+              chain: 'DemoChain',
+              txHash,
+              proofHash: '0x' + hex,
+              anchoredAt: new Date().toISOString()
+            };
+
+            // De-dupe toast messages
+            window.__vpToastedTx ||= new Set();
+            if (!silent && window.showNotification && !window.__vpToastedTx.has(txHash)) {
+              window.__vpToastedTx.add(txHash);
+              showNotification('info', 'Blockchain', `Anchored proof <code>${txHash.slice(0,14)}…</code>`);
+            }
+          }
+
+          // 1) Expose the anchor helper (so the report can auto-backfill proofs)
+          window.vpAnchorVerification = anchorVerification;
+
+          // --- Scenario toolbar (Reset / Sample data) ---
+          function ensureScenarioToolbar() {
+            const mount = document.querySelector('.sidebar .sidebar-header');
+            if (!mount || document.getElementById('demoScenarioBar')) return;
+            const wrap = document.createElement('div');
+            wrap.id = 'demoScenarioBar';
+            wrap.className = 'mt-3';
+            wrap.innerHTML = `
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-light btn-sm" id="btnDemoReset">
+                  <i class="fas fa-undo me-1"></i>Reset Demo
+                </button>
+                <button class="btn btn-outline-warning btn-sm" id="btnDemoScenarioA">
+                  <i class="fas fa-dna me-1"></i>Scenario: Apply NaturalTag
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="btnDemoScenarioB">
+                  <i class="fas fa-flask me-1"></i>Scenario: Verify & Anchor
+                </button>
+              </div>`;
+            mount.appendChild(wrap);
+
+            document.getElementById('btnDemoReset').onclick = () => {
+              localStorage.removeItem(DEMO_KEY);
+              if (window.showNotification) showNotification('success','Demo Reset','State cleared. Reloading…');
+              setTimeout(()=>location.reload(), 300);
+            };
+            document.getElementById('btnDemoScenarioA').onclick = () => {
+              const s = state();
+              const lot = 'COF-2025-0821-01';
+              const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
+              s.naturalTagApplications = [{
+                naturalTagId: tagId, lotId: lot, batchSizeKg: 500, process: 'washed',
+                applicationDate: new Date().toISOString(), status: 'applied', appliedBy: 'Highland Coffee Cooperative'
+              }, ...(s.naturalTagApplications||[])];
+              saveState(); if (window.loadRecentTests) loadRecentTests();
+              if (window.showNotification) showNotification('success','Seeded','NaturalTag applied to sample lot.');
+            };
+            document.getElementById('btnDemoScenarioB').onclick = async () => {
+              const s = state();
+              const lot = 'COF-2025-0821-01';
+              const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
+              const ver = {
+              verificationId: `ND-${Date.now()}`,
+              naturalTagId: tagId,
+              lotId: lot,
+              verificationDate: new Date().toISOString(),
+              status: 'completed',
+              authenticity: 'authentic',
+              confidence: Math.round(stableConfidence(tagId + lot) * 10) / 10,
+              verifiedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports',
+              requestedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports'
+            };
+
+            // Ensure there is a NaturalTag application for this lot, if Scenario A wasn't run
+            s.naturalTagApplications = s.naturalTagApplications || [];
+            if (!s.naturalTagApplications.some(a => a.lotId === lot)) {
+              s.naturalTagApplications.unshift({
+                naturalTagId: tagId,
+                lotId: lot,
+                batchSizeKg: 500,
+                process: 'washed',
+                applicationDate: new Date().toISOString(),
+                status: 'applied',
+                appliedBy: (window.VeriPuraCoffeeData?.companies?.['highland-cooperative']?.name) || 'Highland Coffee Cooperative'
+              });
+            }
+
+            // Add the verification, anchor it, persist, and refresh UI
+            s.naturalDetectVerifications = [ver, ...(s.naturalDetectVerifications || [])];
+
+            await delay(jitter());
+            await anchorVerification(ver);    // also exposed as window.vpAnchorVerification
+            saveState();
+
+            if (window.loadRecentTests) loadRecentTests();
+            if (window.updateOrdersNavNTBadge) updateOrdersNavNTBadge();
+            if (window.loadOrders && document.getElementById('ordersSection')?.style.display !== 'none') loadOrders();
+
+            if (window.showNotification) {
+              showNotification('success', 'Seeded', 'NaturalDetect verification completed (demo).');
+              showNotification('info', 'Blockchain', 'Verification hash anchored to DemoChain.');
+            }
+          };
+          }
+
+          // Make sure the toolbar appears once the sidebar header exists (after login)
+          const scenarioObserver = new MutationObserver(() => {
+            const host = document.querySelector('.sidebar .sidebar-header');
+            if (host) {
+              ensureScenarioToolbar();
+              scenarioObserver.disconnect();
+            }
+          });
+          scenarioObserver.observe(document.body, { childList: true, subtree: true });
+        })();
+    </script>
+  </body>
 </html>
