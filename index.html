@@ -778,6 +778,9 @@
           .modal-backdrop { display: none !important; }
           .content-card { break-inside: avoid; page-break-inside: avoid; }
         }
+
+        /* Overlay z-index fix - below Bootstrap modal backdrop */
+        .gd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1030;display:none}
     </style>
 </head>
 <body>
@@ -1657,7 +1660,8 @@
         /* Helper functions still needed by other parts */
         function extractLotFromOrder(order){
           try{
-            const txt = (order.thread||[]).map(t=>t.msg).join(' ');
+            if (!order || !order.thread) return '';
+            const txt = order.thread.map(t => (t && t.msg) ? t.msg : '').join(' ');
             const m = txt.match(/COF-\d{4}-\d{4}-\d{2}/);
             return m ? m[0] : '';
           }catch(e){ return ''; }
@@ -1766,6 +1770,7 @@
         // REPLACED: Enhanced openNaturalTagModal function (SNIPPET 1 APPLIED)
         function openNaturalTagModal(preset = {}) {
           const modalEl = document.getElementById('naturalTagModal');
+          if (!modalEl) return;
           modalEl.dataset.linkedPo = preset.poId || '';
 
           // Prefill timestamp (as you already did)
@@ -1791,12 +1796,15 @@
           }
 
           // Prefill Lot + Batch size if we have PO context
-          if (preset.lot) document.getElementById('ntLotId').value = preset.lot;
-          if (preset.poId){
+          const lotInput = document.getElementById('ntLotId');
+          const batchInput = document.getElementById('ntBatchSize');
+          
+          if (preset.lot && lotInput) lotInput.value = preset.lot;
+          if (preset.poId && batchInput){
             const o = (VeriPuraCoffeeData.orders||[]).find(x=>x.id===preset.poId);
             if (o){
               const qty = parseInt(String(o.quantity).replace(/[^\d]/g,''),10);
-              if (!isNaN(qty)) document.getElementById('ntBatchSize').value = qty;
+              if (!isNaN(qty)) batchInput.value = qty;
             }
           }
 
@@ -1822,14 +1830,14 @@
                 // SNIPPET 1: Apply-modal chips should also prefill batch size
                 body.querySelectorAll('#ntQuickPick button').forEach(btn=>{
                   btn.addEventListener('click', ()=>{
-                    document.getElementById('ntLotId').value = btn.dataset.lot;
+                    if (lotInput) lotInput.value = btn.dataset.lot;
                     modalEl.dataset.linkedPo = btn.dataset.po || '';
                     // NEW: prefill batch size from the PO quantity
-                    if (btn.dataset.po){
+                    if (btn.dataset.po && batchInput){
                       const o = (VeriPuraCoffeeData.orders||[]).find(x=>x.id===btn.dataset.po);
                       if (o){
                         const qty = parseInt(String(o.quantity).replace(/[^\d]/g,''),10);
-                        if (!isNaN(qty)) document.getElementById('ntBatchSize').value = qty;
+                        if (!isNaN(qty)) batchInput.value = qty;
                       }
                     }
                   });
@@ -1863,10 +1871,21 @@
           const modalEl = document.getElementById('naturalTagModal');
           const linkedPO = modalEl?.dataset?.linkedPo || null;
 
-          const lotId = (document.getElementById('ntLotId').value || '').trim();
-          const batchSize = parseFloat(document.getElementById('ntBatchSize').value || '0');
-          const process = document.getElementById('ntProcess').value || 'washed';
-          const ts = document.getElementById('ntTimestamp').value || new Date().toISOString();
+          const lotIdInput = document.getElementById('ntLotId');
+          const batchSizeInput = document.getElementById('ntBatchSize');
+          const processInput = document.getElementById('ntProcess');
+          const tsInput = document.getElementById('ntTimestamp');
+          
+          if (!lotIdInput || !batchSizeInput || !processInput || !tsInput) {
+            showNotification('error', 'Missing Elements', 'Required form elements not found.');
+            return;
+          }
+
+          const lotId = (lotIdInput.value || '').trim();
+          const batchSize = parseFloat(batchSizeInput.value || '0');
+          const process = processInput.value || 'washed';
+          const ts = tsInput.value || new Date().toISOString();
+          
           if (!lotId || batchSize <= 0) {
             showNotification('error', 'Missing Info', 'Please provide Lot ID and Batch Size.');
             return;
@@ -1905,18 +1924,22 @@
 
           earnVeriTokens(25, `Applied NaturalTag to ${lotId}`);
 
-          bootstrap.Modal.getInstance(document.getElementById('naturalTagModal'))?.hide();
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+          
           showNotification('success', 'NaturalTag Applied', `Tag <b>${nTagId}</b> linked to lot <b>${lotId}</b>.`);
           showNotification('info', 'Next Step', 'Exporter can now run NaturalDetect verification.');
 
           loadRecentTests();
-          if (document.getElementById('ordersSection').style.display !== 'none') loadOrders();
+          if (document.getElementById('ordersSection')?.style.display !== 'none') loadOrders();
         }
 
         // REPLACED: Enhanced openNaturalDetectModal function (SNIPPET 2 APPLIED)
         function openNaturalDetectModal(preset = {}) {
           const tagInput = document.getElementById('ndTagId');
           const lotInput = document.getElementById('ndLotId');
+          
+          if (!tagInput || !lotInput) return;
 
           tagInput.value = preset.tag || '';
           lotInput.value = preset.lot || '';
@@ -1970,13 +1993,20 @@
             }
           },0);
 
-          new bootstrap.Modal(document.getElementById('naturalDetectModal')).show();
+          const modal = document.getElementById('naturalDetectModal');
+          if (modal) new bootstrap.Modal(modal).show();
         }
 
         /* ---------- Submit: NaturalDetect verification (exporter) ---------- */
         function submitNaturalDetectVerification() {
-          const tagId = (document.getElementById('ndTagId').value || '').trim();
-          const lotId = (document.getElementById('ndLotId').value || '').trim();
+          const tagIdInput = document.getElementById('ndTagId');
+          const lotIdInput = document.getElementById('ndLotId');
+          
+          if (!tagIdInput || !lotIdInput) return;
+          
+          const tagId = (tagIdInput.value || '').trim();
+          const lotId = (lotIdInput.value || '').trim();
+          
           if (!tagId && !lotId) {
             showNotification('error', 'Missing Info', 'Enter a NaturalTag ID or Lot ID.');
             return;
@@ -2005,7 +2035,10 @@
           // Small VERI fee for lab run (demo)
           earnVeriTokens(-20, 'NaturalDetect verification fee');
 
-          bootstrap.Modal.getInstance(document.getElementById('naturalDetectModal'))?.hide();
+          const modal = document.getElementById('naturalDetectModal');
+          const modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) modalInstance.hide();
+          
           loadRecentTests();
 
           // 6) Lightweight NT refresh after NaturalDetect completes
@@ -2229,6 +2262,8 @@
 
           // Render a simple, robust evidence view
           const body = document.getElementById('evidenceModalBody');
+          if (!body) return;
+          
           const pretty = (obj) => `<pre class="bg-light p-2 rounded border">${escapeHTML(JSON.stringify(obj, null, 2))}</pre>`;
           let html = `
             <div class="mb-2"><strong>Stage:</strong> ${escapeHTML(ev.stage)}</div>
@@ -2239,7 +2274,8 @@
           `;
 
           body.innerHTML = html;
-          new bootstrap.Modal(document.getElementById('evidenceModal')).show();
+          const modal = document.getElementById('evidenceModal');
+          if (modal) new bootstrap.Modal(modal).show();
         }
 
         function seedDemoNaturalTraceHistory() {
@@ -2433,16 +2469,21 @@
         // Initialize data safety immediately after definition
         safeDataAccess();
 
-        // FIXED: Move backfillChainReceipts to top-level scope with retry logic
-        async function backfillChainReceipts(retry = 0){
+        // FIXED: Move backfillChainReceipts to top-level scope with retry logic and maximum retries
+        async function backfillChainReceipts(retry = 0, maxRetries = 10){
           if (window.__vpBackfilled) return;
+          if (retry >= maxRetries) {
+            console.warn('backfillChainReceipts: Max retries reached');
+            return;
+          }
+          
           const list = (window.VeriPuraCoffeeData?.naturalDetectVerifications)||[];
           if (!Array.isArray(list)) return;
 
           // wait until the helper is available
           if (!window.vpAnchorVerification){
             const delay = Math.min(1000, 100 * (retry+1));
-            return setTimeout(() => backfillChainReceipts(retry+1), delay);
+            return setTimeout(() => backfillChainReceipts(retry+1, maxRetries), delay);
           }
 
           const missing = list.filter(v => v.status==='completed' && !v.chainReceipt);
@@ -2459,8 +2500,16 @@
         // Authentication - THE FIX: Properly bind the event listener on page load
         function handleAuth(event) {
             event.preventDefault();
-            const companyId = document.getElementById('company').value;
-            const password = document.getElementById('password').value;
+            const companySelect = document.getElementById('company');
+            const passwordInput = document.getElementById('password');
+            
+            if (!companySelect || !passwordInput) {
+                showNotification('error', 'Form Error', 'Authentication form elements not found');
+                return;
+            }
+            
+            const companyId = companySelect.value;
+            const password = passwordInput.value;
             
             if (!companyId || !password) {
                 showNotification('error', 'Authentication Failed', 'Please select an organization and enter password');
@@ -2478,11 +2527,19 @@
         }
 
         function showDashboard() {
-            document.getElementById('authScreen').classList.add('hide');
-            document.getElementById('dashboardScreen').classList.add('show');
+            const authScreen = document.getElementById('authScreen');
+            const dashboardScreen = document.getElementById('dashboardScreen');
             
-            document.getElementById('userName').textContent = currentUser.company.name;
-            document.getElementById('companyLogo').textContent = currentUser.company.name.charAt(0);
+            if (authScreen) authScreen.classList.add('hide');
+            if (dashboardScreen) dashboardScreen.classList.add('show');
+            
+            if (!currentUser) return;
+            
+            const userName = document.getElementById('userName');
+            const companyLogo = document.getElementById('companyLogo');
+            
+            if (userName) userName.textContent = currentUser.company.name;
+            if (companyLogo) companyLogo.textContent = currentUser.company.name.charAt(0);
             
             // Set org type for CSS targeting
             document.body.setAttribute('data-org-type', currentUser.company.type);
@@ -2498,19 +2555,25 @@
 
         function logout() {
             currentUser = null;
-            document.getElementById('dashboardScreen').classList.remove('show');
-            document.getElementById('authScreen').classList.remove('hide');
-            document.getElementById('authForm').reset();
+            const dashboardScreen = document.getElementById('dashboardScreen');
+            const authScreen = document.getElementById('authScreen');
+            const authForm = document.getElementById('authForm');
+            
+            if (dashboardScreen) dashboardScreen.classList.remove('show');
+            if (authScreen) authScreen.classList.remove('hide');
+            if (authForm) authForm.reset();
             
             // Clean up org type attribute
             document.body.removeAttribute('data-org-type');
             
             // Hide FAB on logout (Snippet 4)
-            document.getElementById('ntFab')?.classList.remove('show');
+            const fab = document.getElementById('ntFab');
+            if (fab) fab.classList.remove('show');
             
             // Reset nav highlight to Dashboard
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.querySelector('.nav-link[data-section="dashboard"]').classList.add('active');
+            const dashboardNav = document.querySelector('.nav-link[data-section="dashboard"]');
+            if (dashboardNav) dashboardNav.classList.add('active');
             showSection('dashboard');
         }
 
@@ -2548,11 +2611,13 @@
             }
         }
 
-        // Dashboard Stats
+        // Dashboard Stats - FIXED: Added null checks
         function loadDashboardStats() {
             const statsGrid = document.getElementById('statsGrid');
-            const meId = currentUser?.company?.id;
-            const meName = currentUser?.company?.name;
+            if (!statsGrid || !currentUser) return;
+            
+            const meId = currentUser.company.id;
+            const meName = currentUser.company.name;
 
             const activeOrders = window.VeriPuraCoffeeData.orders
                 .filter(o => (o.from === meName || o.to === meName) && o.status !== 'completed')
@@ -2592,12 +2657,12 @@
             `).join('');
         }
 
-        // Recent Activity
+        // Recent Activity - FIXED: Added null checks
         function loadRecentActivity() {
             const tableBody = document.querySelector('#recentActivityTable tbody');
-            if (!tableBody) return;
+            if (!tableBody || !currentUser) return;
 
-            const meName = currentUser?.company?.name;
+            const meName = currentUser.company.name;
 
             const recentOrders = [...window.VeriPuraCoffeeData.orders]
                 .filter(o => o.from === meName || o.to === meName)
@@ -2645,18 +2710,27 @@
             }).join('');
         }
 
-        // VERI Token System
+        // VERI Token System - FIXED: Added null checks
         function loadVeriBalance() {
+            if (!currentUser) return;
+            
             const balanceData = window.VeriPuraCoffeeData.veriBalances[currentUser.company.id];
             if (balanceData) {
-                document.getElementById('veriBalance').textContent = balanceData.currentBalance.toLocaleString();
-                document.getElementById('floatingTokenCount').textContent = balanceData.currentBalance.toLocaleString();
-                document.getElementById('veriTotalEarned').textContent = balanceData.totalEarned.toLocaleString();
-                document.getElementById('veriMonthlyEarnings').textContent = balanceData.monthlyEarnings.toLocaleString();
+                const veriBalance = document.getElementById('veriBalance');
+                const floatingTokenCount = document.getElementById('floatingTokenCount');
+                const veriTotalEarned = document.getElementById('veriTotalEarned');
+                const veriMonthlyEarnings = document.getElementById('veriMonthlyEarnings');
+                
+                if (veriBalance) veriBalance.textContent = balanceData.currentBalance.toLocaleString();
+                if (floatingTokenCount) floatingTokenCount.textContent = balanceData.currentBalance.toLocaleString();
+                if (veriTotalEarned) veriTotalEarned.textContent = balanceData.totalEarned.toLocaleString();
+                if (veriMonthlyEarnings) veriMonthlyEarnings.textContent = balanceData.monthlyEarnings.toLocaleString();
             }
         }
 
         function earnVeriTokens(amount, reason) {
+            if (!currentUser) return;
+            
             const balanceData = window.VeriPuraCoffeeData.veriBalances[currentUser.company.id];
             if (balanceData) {
                 balanceData.currentBalance += amount;
@@ -2680,28 +2754,45 @@
             buildSupplierOptions();
 
             // Reset form
-            document.getElementById('poVariety').value = '';
-            document.getElementById('poQuantity').value = '';
-            document.getElementById('poBasePrice').value = '5.50';
-            document.getElementById('poDeliveryDate').value = '';
+            const poVariety = document.getElementById('poVariety');
+            const poQuantity = document.getElementById('poQuantity');
+            const poBasePrice = document.getElementById('poBasePrice');
+            const poDeliveryDate = document.getElementById('poDeliveryDate');
+            
+            if (poVariety) poVariety.value = '';
+            if (poQuantity) poQuantity.value = '';
+            if (poBasePrice) poBasePrice.value = '5.50';
+            if (poDeliveryDate) poDeliveryDate.value = '';
 
             // Reset traceability & certifications
-            document.getElementById('standardTrace').checked = true;
-            document.getElementById('naturalTrace').checked = false;
+            const standardTrace = document.getElementById('standardTrace');
+            const naturalTrace = document.getElementById('naturalTrace');
+            
+            if (standardTrace) standardTrace.checked = true;
+            if (naturalTrace) naturalTrace.checked = false;
+            
             document.querySelectorAll('.traceability-option').forEach(o => o.classList.remove('selected'));
-            document.querySelector('.traceability-option:not(.premium-option)').classList.add('selected');
+            const standardOption = document.querySelector('.traceability-option:not(.premium-option)');
+            if (standardOption) standardOption.classList.add('selected');
             
             // Explicitly call to ensure premium badges are hidden on modal open
             selectTraceabilityMethod('standard');
             
-            ['organicCert','fairtradeCert','eudrCert','rainforestCert'].forEach(id => document.getElementById(id).checked = false);
+            ['organicCert','fairtradeCert','eudrCert','rainforestCert'].forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) elem.checked = false;
+            });
 
             // Default delivery = +30 days
-            const defaultDate = new Date(); defaultDate.setDate(defaultDate.getDate() + 30);
-            document.getElementById('poDeliveryDate').value = defaultDate.toISOString().split('T')[0];
+            if (poDeliveryDate) {
+                const defaultDate = new Date(); 
+                defaultDate.setDate(defaultDate.getDate() + 30);
+                poDeliveryDate.value = defaultDate.toISOString().split('T')[0];
+            }
 
             updatePOPricing();
-            new bootstrap.Modal(document.getElementById('enhancedPOModal')).show();
+            const modal = document.getElementById('enhancedPOModal');
+            if (modal) new bootstrap.Modal(modal).show();
         }
 
         function selectTraceabilityMethod(method) {
@@ -2709,19 +2800,21 @@
             const natural  = document.getElementById('naturalTrace');
 
             if (method === 'standard') {
-                standard.checked = true;
-                natural.checked  = false;
+                if (standard) standard.checked = true;
+                if (natural) natural.checked = false;
             } else {
-                standard.checked = false;
-                natural.checked  = true;
+                if (standard) standard.checked = false;
+                if (natural) natural.checked = true;
             }
 
             // Update visual selection state
             document.querySelectorAll('.traceability-option').forEach(option => option.classList.remove('selected'));
             if (method === 'natural') {
-                document.querySelector('.premium-option').classList.add('selected');
+                const premiumOption = document.querySelector('.premium-option');
+                if (premiumOption) premiumOption.classList.add('selected');
             } else {
-                document.querySelector('.traceability-option:not(.premium-option)').classList.add('selected');
+                const standardOption = document.querySelector('.traceability-option:not(.premium-option)');
+                if (standardOption) standardOption.classList.add('selected');
             }
 
             // NEW: Hide/disable premium UI when Standard is selected
@@ -2741,17 +2834,27 @@
         }
 
         function updatePOPricing() {
-            const quantity = parseFloat(document.getElementById('poQuantity').value) || 0;
-            const basePrice = parseFloat(document.getElementById('poBasePrice').value) || 5.50;
+            const poQuantity = document.getElementById('poQuantity');
+            const poBasePrice = document.getElementById('poBasePrice');
+            const naturalTrace = document.getElementById('naturalTrace');
+            
+            if (!poQuantity || !poBasePrice) return;
+            
+            const quantity = parseFloat(poQuantity.value) || 0;
+            const basePrice = parseFloat(poBasePrice.value) || 5.50;
             
             if (quantity <= 0) {
                 // Reset all displays to zero
-                document.getElementById('baseCostDisplay').textContent = '$0';
-                document.getElementById('traceabilityPremiumDisplay').textContent = '$0';
-                document.getElementById('certificationPremiumDisplay').textContent = '$0';
-                document.getElementById('deliveryPremiumDisplay').textContent = '$0';
-                document.getElementById('totalCostDisplay').textContent = '$0';
-                document.getElementById('veriCostDisplay').textContent = '0 VERI';
+                const displays = [
+                    'baseCostDisplay', 'traceabilityPremiumDisplay', 'certificationPremiumDisplay',
+                    'deliveryPremiumDisplay', 'totalCostDisplay', 'veriCostDisplay'
+                ];
+                displays.forEach(id => {
+                    const elem = document.getElementById(id);
+                    if (elem) {
+                        elem.textContent = id === 'veriCostDisplay' ? '0 VERI' : '$0';
+                    }
+                });
                 return;
             }
             
@@ -2761,23 +2864,24 @@
             let deliveryPremium = 0;
             
             // Traceability premium
-            if (document.getElementById('naturalTrace').checked) {
+            if (naturalTrace && naturalTrace.checked) {
                 traceabilityPremium = baseCost * 0.15; // 15% premium
             }
             
             // Certification premiums
-            if (document.getElementById('organicCert').checked) {
-                certificationPremium += quantity * 0.50;
-            }
-            if (document.getElementById('fairtradeCert').checked) {
-                certificationPremium += quantity * 0.25;
-            }
-            if (document.getElementById('eudrCert').checked) {
-                certificationPremium += quantity * 0.30;
-            }
-            if (document.getElementById('rainforestCert').checked) {
-                certificationPremium += quantity * 0.20;
-            }
+            const certs = [
+                { id: 'organicCert', premium: 0.50 },
+                { id: 'fairtradeCert', premium: 0.25 },
+                { id: 'eudrCert', premium: 0.30 },
+                { id: 'rainforestCert', premium: 0.20 }
+            ];
+            
+            certs.forEach(cert => {
+                const elem = document.getElementById(cert.id);
+                if (elem && elem.checked) {
+                    certificationPremium += quantity * cert.premium;
+                }
+            });
             
             // Delivery premium (rush orders)
             deliveryPremium = calculateDeliveryPremium();
@@ -2786,19 +2890,32 @@
             const veriCost = Math.floor(totalCost * 0.1); // 10% of order value in VERI tokens
             
             // Update displays
-            document.getElementById('baseCostDisplay').textContent = `${baseCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('traceabilityPremiumDisplay').textContent = `${traceabilityPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('certificationPremiumDisplay').textContent = `${certificationPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('deliveryPremiumDisplay').textContent = `${deliveryPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('totalCostDisplay').textContent = `${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('veriCostDisplay').textContent = `${veriCost.toLocaleString()} VERI`;
+            const updates = [
+                { id: 'baseCostDisplay', value: `${baseCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+                { id: 'traceabilityPremiumDisplay', value: `${traceabilityPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+                { id: 'certificationPremiumDisplay', value: `${certificationPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+                { id: 'deliveryPremiumDisplay', value: `${deliveryPremium.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+                { id: 'totalCostDisplay', value: `${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+                { id: 'veriCostDisplay', value: `${veriCost.toLocaleString()} VERI` }
+            ];
+            
+            updates.forEach(update => {
+                const elem = document.getElementById(update.id);
+                if (elem) elem.textContent = update.value;
+            });
             
             updateROIBenefits(totalCost, traceabilityPremium);
         }
 
         function calculateDeliveryPremium() {
-            const dateStr = document.getElementById('poDeliveryDate').value;
-            const quantity = parseFloat(document.getElementById('poQuantity').value) || 0;
+            const dateInput = document.getElementById('poDeliveryDate');
+            const quantityInput = document.getElementById('poQuantity');
+            
+            if (!dateInput || !quantityInput) return 0;
+            
+            const dateStr = dateInput.value;
+            const quantity = parseFloat(quantityInput.value) || 0;
+            
             if (!dateStr || quantity <= 0) return 0;
 
             const delivery = new Date(dateStr);
@@ -2818,7 +2935,11 @@
 
         function updateROIBenefits(totalCost, traceabilityPremium) {
             const roiBenefits = document.getElementById('roiBenefits');
-            const isNaturalTrace = document.getElementById('naturalTrace').checked;
+            const naturalTrace = document.getElementById('naturalTrace');
+            
+            if (!roiBenefits) return;
+            
+            const isNaturalTrace = naturalTrace && naturalTrace.checked;
             
             if (isNaturalTrace && traceabilityPremium > 0) {
                 const brandPremiumMin = Math.floor(totalCost * 0.20);
@@ -2871,10 +2992,25 @@
         }
 
         function submitPurchaseOrder() {
-            const supplier = document.getElementById('poSupplier').value;
-            const variety = document.getElementById('poVariety').value;
-            const quantity = document.getElementById('poQuantity').value;
-            const deliveryDate = document.getElementById('poDeliveryDate').value;
+            const inputs = {
+                supplier: document.getElementById('poSupplier'),
+                variety: document.getElementById('poVariety'),
+                quantity: document.getElementById('poQuantity'),
+                deliveryDate: document.getElementById('poDeliveryDate')
+            };
+            
+            // Check if all required inputs exist
+            for (const [key, input] of Object.entries(inputs)) {
+                if (!input) {
+                    showNotification('error', 'Form Error', `${key} input not found`);
+                    return;
+                }
+            }
+            
+            const supplier = inputs.supplier.value;
+            const variety = inputs.variety.value;
+            const quantity = inputs.quantity.value;
+            const deliveryDate = inputs.deliveryDate.value;
             
             if (!supplier || !variety || !quantity || !deliveryDate) {
                 showNotification('error', 'Validation Error', 'Please fill in all required order details');
@@ -2904,9 +3040,19 @@
                 return;
             }
             
-            const isNaturalTrace = document.getElementById('naturalTrace').checked;
-            const totalCost = document.getElementById('totalCostDisplay').textContent;
-            const veriCost = document.getElementById('veriCostDisplay').textContent;
+            const naturalTrace = document.getElementById('naturalTrace');
+            const isNaturalTrace = naturalTrace && naturalTrace.checked;
+            
+            const totalCostDisplay = document.getElementById('totalCostDisplay');
+            const veriCostDisplay = document.getElementById('veriCostDisplay');
+            
+            if (!totalCostDisplay || !veriCostDisplay) {
+                showNotification('error', 'Display Error', 'Cost display elements not found');
+                return;
+            }
+            
+            const totalCost = totalCostDisplay.textContent;
+            const veriCost = veriCostDisplay.textContent;
             
             // Generate new order ID
             const year = new Date().getFullYear();
@@ -2914,18 +3060,22 @@
             
             // Collect certifications
             const certifications = [];
-            if (document.getElementById('organicCert').checked) certifications.push('Organic');
-            if (document.getElementById('fairtradeCert').checked) certifications.push('Fair Trade');
-            if (document.getElementById('eudrCert').checked) certifications.push('EUDR');
-            if (document.getElementById('rainforestCert').checked) certifications.push('Rainforest Alliance');
+            const certIds = ['organicCert', 'fairtradeCert', 'eudrCert', 'rainforestCert'];
+            const certNames = ['Organic', 'Fair Trade', 'EUDR', 'Rainforest Alliance'];
+            
+            certIds.forEach((id, index) => {
+                const elem = document.getElementById(id);
+                if (elem && elem.checked) {
+                    certifications.push(certNames[index]);
+                }
+            });
             
             // Determine order direction based on user's company type and supplier selection
             let orderDirection = 'sent'; // Default: user is sending order to supplier
             const supplierName = supplierCompany.name;
             
             // Pull numeric total from the UI and compute cents
-            const totalCostNumber = parseFloat(document.getElementById('totalCostDisplay')
-                .textContent.replace(/[^\d.]/g, '')) || 0;
+            const totalCostNumber = parseFloat(totalCostDisplay.textContent.replace(/[^\d.]/g, '')) || 0;
             const priceCents = Math.round(totalCostNumber * 100);
 
             // Build the new order object
@@ -2961,7 +3111,9 @@
             earnVeriTokens(-veriAmount, `Purchase order ${orderId} creation fee`);
             
             // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('enhancedPOModal')).hide();
+            const modal = document.getElementById('enhancedPOModal');
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) modalInstance.hide();
             
             // Show success notification
             showNotification('success', 'Purchase Order Created', 
@@ -2970,7 +3122,7 @@
             // Refresh relevant displays
             loadRecentActivity();
             loadDashboardStats();
-            if (document.getElementById('ordersSection').style.display !== 'none') {
+            if (document.getElementById('ordersSection')?.style.display !== 'none') {
                 loadOrders();
             }
             
@@ -2979,6 +3131,7 @@
                 const order = window.VeriPuraCoffeeData.orders.find(o => o.id === orderId);
                 if (order) {
                     order.status = 'active';
+                    if (!order.thread) order.thread = [];
                     order.thread.push({
                         author: supplierName,
                         msg: `Order confirmed. ${isNaturalTrace ? 'NaturalTag application scheduled.' : 'Standard processing initiated.'}`,
@@ -2987,7 +3140,7 @@
                     showNotification('info', 'Order Update', `${orderId}: Supplier confirmed. ${isNaturalTrace ? 'NaturalTag application scheduled.' : 'Standard processing initiated.'}`);
                     loadRecentActivity();
                     loadDashboardStats();
-                    if (document.getElementById('ordersSection').style.display !== 'none') {
+                    if (document.getElementById('ordersSection')?.style.display !== 'none') {
                         loadOrders();
                     }
                 }
@@ -3040,6 +3193,7 @@
             // --- END robust name + list logic ---
 
             // Keep the rest of the function for labels and icons
+            if (!currentUser) return;
             const currentCompanyType = currentUser.company.type;
             
             // Determine section labels based on company type
@@ -3053,8 +3207,11 @@
             }
             
             // Update the first section title
-            document.getElementById('firstSectionLabel').textContent = firstSectionLabel;
-            document.querySelector('#firstSectionTitle i').className = `${firstSectionIcon} me-2 text-success`;
+            const firstSectionLabelElem = document.getElementById('firstSectionLabel');
+            const firstSectionIconElem = document.querySelector('#firstSectionTitle i');
+            
+            if (firstSectionLabelElem) firstSectionLabelElem.textContent = firstSectionLabel;
+            if (firstSectionIconElem) firstSectionIconElem.className = `${firstSectionIcon} me-2 text-success`;
             
             // Spotlight removed - no-op calls
             renderNTSpotlightBar();
@@ -3080,10 +3237,10 @@
             const threadMessages = order.thread ? order.thread.map(msg => `
                 <div class="thread-message">
                     <div class="message-author">
-                        ${escapeHTML(msg.author)}
-                        <span class="message-time">${escapeHTML(msg.ts)}</span>
+                        ${escapeHTML(msg.author || '')}
+                        <span class="message-time">${escapeHTML(msg.ts || '')}</span>
                     </div>
-                    <div>${escapeHTML(msg.msg)}</div>
+                    <div>${escapeHTML(msg.msg || '')}</div>
                 </div>
             `).join('') : '';
 
@@ -3096,8 +3253,8 @@
                                 ${traceIcon}
                             </div>
                             <div class="order-meta">
-                                <strong>${escapeHTML(order.variety)}</strong> - ${escapeHTML(order.quantity)}
-                                <br><small>${partnerLabel}</small> ${escapeHTML(partner)}
+                                <strong>${escapeHTML(order.variety || '')}</strong> - ${escapeHTML(order.quantity || '')}
+                                <br><small>${partnerLabel}</small> ${escapeHTML(partner || '')}
                             </div>
                         </div>
                         <div class="order-status">
@@ -3115,11 +3272,11 @@
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Coffee Variety</div>
-                                <div class="detail-value">${escapeHTML(order.variety)}</div>
+                                <div class="detail-value">${escapeHTML(order.variety || '')}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Quantity</div>
-                                <div class="detail-value">${escapeHTML(order.quantity)}</div>
+                                <div class="detail-value">${escapeHTML(order.quantity || '')}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Total Value</div>
@@ -3127,7 +3284,7 @@
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">${partnerLabel.slice(0, -1)}</div>
-                                <div class="detail-value">${escapeHTML(partner)}</div>
+                                <div class="detail-value">${escapeHTML(partner || '')}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Traceability Method</div>
@@ -3139,11 +3296,11 @@
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Order Date</div>
-                                <div class="detail-value">${new Date(order.created).toLocaleDateString()}</div>
+                                <div class="detail-value">${order.created ? new Date(order.created).toLocaleDateString() : ''}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Delivery Date</div>
-                                <div class="detail-value">${new Date(order.delivery).toLocaleDateString()}</div>
+                                <div class="detail-value">${order.delivery ? new Date(order.delivery).toLocaleDateString() : ''}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Status</div>
@@ -3190,6 +3347,8 @@
             const details = document.getElementById(`details-${orderId}`);
             const chevron = document.getElementById(`chevron-${orderId}`);
             
+            if (!details || !chevron) return;
+            
             if (details.classList.contains('expanded')) {
                 details.classList.remove('expanded');
                 chevron.classList.remove('expanded');
@@ -3208,6 +3367,8 @@
             const content = document.getElementById(`${section}OrdersContent`);
             const chevron = document.getElementById(`${section}Chevron`);
             
+            if (!content || !chevron) return;
+            
             if (content.style.display === 'none') {
                 content.style.display = 'block';
                 chevron.classList.remove('collapsed');
@@ -3219,7 +3380,8 @@
 
         function viewOrder(orderId) {
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            document.querySelector('[data-section="orders"]').classList.add('active');
+            const ordersNav = document.querySelector('[data-section="orders"]');
+            if (ordersNav) ordersNav.classList.add('active');
             showSection('orders');
             
             setTimeout(() => {
@@ -3238,14 +3400,20 @@
             selectedTestType = testType;
             populateTestTypeGrid();
             
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('harvestDate').value = today;
+            const harvestDate = document.getElementById('harvestDate');
+            if (harvestDate) {
+                const today = new Date().toISOString().split('T')[0];
+                harvestDate.value = today;
+            }
             
-            new bootstrap.Modal(document.getElementById('coffeeTestModal')).show();
+            const modal = document.getElementById('coffeeTestModal');
+            if (modal) new bootstrap.Modal(modal).show();
         }
 
         function populateTestTypeGrid() {
             const grid = document.getElementById('testTypeGrid');
+            if (!grid) return;
+            
             const protocols = window.VeriPuraCoffeeData.testProtocols;
             
             grid.innerHTML = Object.keys(protocols).map(testType => {
@@ -3272,11 +3440,13 @@
         function selectTestType(testType) {
             selectedTestType = testType;
             document.querySelectorAll('.test-card').forEach(card => card.classList.remove('selected'));
-            document.querySelector(`.${testType}-test`).classList.add('selected');
+            const testCard = document.querySelector(`.${testType}-test`);
+            if (testCard) testCard.classList.add('selected');
             
             const protocol = window.VeriPuraCoffeeData.testProtocols[testType];
-            if (protocol) {
-                document.getElementById('baseCost').textContent = `${protocol.baseCost.min}-${protocol.baseCost.max} VERI`;
+            const baseCost = document.getElementById('baseCost');
+            if (protocol && baseCost) {
+                baseCost.textContent = `${protocol.baseCost.min}-${protocol.baseCost.max} VERI`;
             }
         }
 
@@ -3286,9 +3456,23 @@
                 return;
             }
             
-            const lotId = document.getElementById('lotId').value;
-            const variety = document.getElementById('variety').value;
-            const sampleSize = document.getElementById('sampleSize').value;
+            const inputs = {
+                lotId: document.getElementById('lotId'),
+                variety: document.getElementById('variety'),
+                sampleSize: document.getElementById('sampleSize')
+            };
+            
+            // Check if required inputs exist
+            for (const [key, input] of Object.entries(inputs)) {
+                if (!input) {
+                    showNotification('error', 'Form Error', `${key} input not found`);
+                    return;
+                }
+            }
+            
+            const lotId = inputs.lotId.value;
+            const variety = inputs.variety.value;
+            const sampleSize = inputs.sampleSize.value;
             
             if (!lotId || !variety || !sampleSize) {
                 showNotification('error', 'Missing Information', 'Please fill in all required fields');
@@ -3298,18 +3482,22 @@
             // Generate test request ID
             const testId = `TEST-${Date.now()}`;
             
+            const processing = document.getElementById('processing');
+            const harvestDate = document.getElementById('harvestDate');
+            const farmOrigin = document.getElementById('farmOrigin');
+            
             const testRequest = {
                 id: testId,
                 type: selectedTestType,
                 lotId: lotId,
                 variety: variety,
                 sampleSize: parseFloat(sampleSize),
-                processing: document.getElementById('processing').value,
-                harvestDate: document.getElementById('harvestDate').value,
-                farmOrigin: document.getElementById('farmOrigin').value,
+                processing: processing ? processing.value : 'washed',
+                harvestDate: harvestDate ? harvestDate.value : new Date().toISOString().split('T')[0],
+                farmOrigin: farmOrigin ? farmOrigin.value : 'Da Lat Highlands',
                 status: 'pending',
                 created: new Date().toISOString(),
-                requestedBy: currentUser.company.name
+                requestedBy: currentUser?.company?.name || 'Unknown'
             };
             
             // Add to test requests array
@@ -3321,7 +3509,9 @@
             earnVeriTokens(-cost, `${protocol.name} test request`);
             
             // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('coffeeTestModal')).hide();
+            const modal = document.getElementById('coffeeTestModal');
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) modalInstance.hide();
             
             // Show success notification
             showNotification('success', 'Test Request Submitted', 
@@ -3355,9 +3545,9 @@
         // Load recent tests for the quality section - UPDATED WITH FIX
         function loadRecentTests() {
             const tableBody = document.querySelector('#recentTestsTable tbody');
-            if (!tableBody) return;
+            if (!tableBody || !currentUser) return;
 
-            const meName = currentUser?.company?.name || '';
+            const meName = currentUser.company.name;
             const norm = s => String(s || '').trim().replace(/\s+/g, ' ');
 
             // Lots from orders where you're either the buyer or the seller
@@ -3371,21 +3561,21 @@
             const allTests = [
                 ...window.VeriPuraCoffeeData.testRequests,
                 ...window.VeriPuraCoffeeData.naturalTagApplications.map(nta => ({
-                    id: nta.naturalTagId,
+                    id: nta.naturalTagId || '',
                     type: 'naturaltag',
-                    status: nta.status,
-                    created: nta.applicationDate,
+                    status: nta.status || 'unknown',
+                    created: nta.applicationDate || new Date().toISOString(),
                     score: 'Applied',
-                    requestedBy: nta.appliedBy,
-                    lotId: nta.lotId
+                    requestedBy: nta.appliedBy || '',
+                    lotId: nta.lotId || ''
                 })),
                 ...window.VeriPuraCoffeeData.naturalDetectVerifications.map(ndv => ({
-                    id: ndv.verificationId,
+                    id: ndv.verificationId || '',
                     type: 'naturaldetect',
-                    status: ndv.status,
-                    created: ndv.verificationDate,
-                    score: ndv.authenticity === 'authentic' ? `${ndv.confidence.toFixed(1)}%` : 'Failed',
-                    requestedBy: ndv.verifiedBy || ndv.requestedBy || currentUser?.company?.name,
+                    status: ndv.status || 'unknown',
+                    created: ndv.verificationDate || new Date().toISOString(),
+                    score: ndv.authenticity === 'authentic' ? `${(ndv.confidence || 0).toFixed(1)}%` : 'Failed',
+                    requestedBy: ndv.verifiedBy || ndv.requestedBy || currentUser?.company?.name || '',
                     lotId: ndv.lotId || null
                 }))
             ];
@@ -3422,7 +3612,7 @@
                         <td><strong>${escapeHTML(test.id)}</strong></td>
                         <td><i class="${proto.icon} me-2"></i>${escapeHTML(proto.name)}</td>
                         <td><span class="status-badge status-${statusClass}">${statusClass.toUpperCase()}</span></td>
-                        <td>${new Date(test.created).toLocaleDateString()}</td>
+                        <td>${test.created ? new Date(test.created).toLocaleDateString() : ''}</td>
                         <td><strong>${escapeHTML(test.score || 'Pending')}</strong></td>
                         <td><button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-eye"></i></button></td>
                     </tr>
@@ -3459,13 +3649,15 @@
 
             toastContainer.insertAdjacentHTML('beforeend', toastHTML);
             const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement);
-            toast.show();
+            if (toastElement) {
+                const toast = new bootstrap.Toast(toastElement);
+                toast.show();
 
-            // Clean up after toast hides
-            toastElement.addEventListener('hidden.bs.toast', () => {
-                toastElement.remove();
-            });
+                // Clean up after toast hides
+                toastElement.addEventListener('hidden.bs.toast', () => {
+                    toastElement.remove();
+                });
+            }
         }
 
         // Initialize the application
@@ -3612,7 +3804,8 @@
 
             const mount = document.getElementById('crBody');
             if (mount) mount.innerHTML = body;
-            new bootstrap.Modal(document.getElementById('complianceReportModal')).show();
+            const modal = document.getElementById('complianceReportModal');
+            if (modal) new bootstrap.Modal(modal).show();
           };
         })();
     </script>
@@ -3727,68 +3920,93 @@
               </div>`;
             mount.appendChild(wrap);
 
-            document.getElementById('btnDemoReset').onclick = () => {
-              localStorage.removeItem(DEMO_KEY);
-              if (window.showNotification) showNotification('success','Demo Reset','State cleared. Reloading…');
-              setTimeout(()=>location.reload(), 300);
-            };
-            document.getElementById('btnDemoScenarioA').onclick = () => {
-              const s = state();
-              const lot = 'COF-2025-0821-01';
-              const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
-              s.naturalTagApplications = [{
-                naturalTagId: tagId, lotId: lot, batchSizeKg: 500, process: 'washed',
-                applicationDate: new Date().toISOString(), status: 'applied', appliedBy: 'Highland Coffee Cooperative'
-              }, ...(s.naturalTagApplications||[])];
-              saveState(); if (window.loadRecentTests) loadRecentTests();
-              if (window.showNotification) showNotification('success','Seeded','NaturalTag applied to sample lot.');
-            };
-            document.getElementById('btnDemoScenarioB').onclick = async () => {
-              const s = state();
-              const lot = 'COF-2025-0821-01';
-              const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
-              const ver = {
-              verificationId: `ND-${Date.now()}`,
-              naturalTagId: tagId,
-              lotId: lot,
-              verificationDate: new Date().toISOString(),
-              status: 'completed',
-              authenticity: 'authentic',
-              confidence: Math.round(stableConfidence(tagId + lot) * 10) / 10,
-              verifiedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports',
-              requestedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports'
-            };
+            const btnReset = document.getElementById('btnDemoReset');
+            const btnScenarioA = document.getElementById('btnDemoScenarioA');
+            const btnScenarioB = document.getElementById('btnDemoScenarioB');
 
-            // Ensure there is a NaturalTag application for this lot, if Scenario A wasn't run
-            s.naturalTagApplications = s.naturalTagApplications || [];
-            if (!s.naturalTagApplications.some(a => a.lotId === lot)) {
-              s.naturalTagApplications.unshift({
-                naturalTagId: tagId,
-                lotId: lot,
-                batchSizeKg: 500,
-                process: 'washed',
-                applicationDate: new Date().toISOString(),
-                status: 'applied',
-                appliedBy: (window.VeriPuraCoffeeData?.companies?.['highland-cooperative']?.name) || 'Highland Coffee Cooperative'
-              });
+            if (btnReset) {
+              btnReset.onclick = () => {
+                try {
+                  localStorage.removeItem(DEMO_KEY);
+                  if (window.showNotification) showNotification('success','Demo Reset','State cleared. Reloading…');
+                  setTimeout(()=>location.reload(), 300);
+                } catch(e) {
+                  console.error('Reset failed:', e);
+                }
+              };
             }
 
-            // Add the verification, anchor it, persist, and refresh UI
-            s.naturalDetectVerifications = [ver, ...(s.naturalDetectVerifications || [])];
-
-            await delay(jitter());
-            await anchorVerification(ver);    // also exposed as window.vpAnchorVerification
-            saveState();
-
-            if (window.loadRecentTests) loadRecentTests();
-            if (window.updateOrdersNavNTBadge) updateOrdersNavNTBadge();
-            if (window.loadOrders && document.getElementById('ordersSection')?.style.display !== 'none') loadOrders();
-
-            if (window.showNotification) {
-              showNotification('success', 'Seeded', 'NaturalDetect verification completed (demo).');
-              showNotification('info', 'Blockchain', 'Verification hash anchored to DemoChain.');
+            if (btnScenarioA) {
+              btnScenarioA.onclick = () => {
+                try {
+                  const s = state();
+                  const lot = 'COF-2025-0821-01';
+                  const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
+                  s.naturalTagApplications = [{
+                    naturalTagId: tagId, lotId: lot, batchSizeKg: 500, process: 'washed',
+                    applicationDate: new Date().toISOString(), status: 'applied', appliedBy: 'Highland Coffee Cooperative'
+                  }, ...(s.naturalTagApplications||[])];
+                  saveState(); 
+                  if (window.loadRecentTests) loadRecentTests();
+                  if (window.showNotification) showNotification('success','Seeded','NaturalTag applied to sample lot.');
+                } catch(e) {
+                  console.error('Scenario A failed:', e);
+                }
+              };
             }
-          };
+
+            if (btnScenarioB) {
+              btnScenarioB.onclick = async () => {
+                try {
+                  const s = state();
+                  const lot = 'COF-2025-0821-01';
+                  const tagId = `NT-${lot.replace(/[^A-Z0-9]+/gi,'')}-1001`;
+                  const ver = {
+                  verificationId: `ND-${Date.now()}`,
+                  naturalTagId: tagId,
+                  lotId: lot,
+                  verificationDate: new Date().toISOString(),
+                  status: 'completed',
+                  authenticity: 'authentic',
+                  confidence: Math.round(stableConfidence(tagId + lot) * 10) / 10,
+                  verifiedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports',
+                  requestedBy: (window.VeriPuraCoffeeData?.companies?.['vietnam-exports']?.name) || 'Vietnam Premium Coffee Exports'
+                };
+
+                // Ensure there is a NaturalTag application for this lot, if Scenario A wasn't run
+                s.naturalTagApplications = s.naturalTagApplications || [];
+                if (!s.naturalTagApplications.some(a => a.lotId === lot)) {
+                  s.naturalTagApplications.unshift({
+                    naturalTagId: tagId,
+                    lotId: lot,
+                    batchSizeKg: 500,
+                    process: 'washed',
+                    applicationDate: new Date().toISOString(),
+                    status: 'applied',
+                    appliedBy: (window.VeriPuraCoffeeData?.companies?.['highland-cooperative']?.name) || 'Highland Coffee Cooperative'
+                  });
+                }
+
+                // Add the verification, anchor it, persist, and refresh UI
+                s.naturalDetectVerifications = [ver, ...(s.naturalDetectVerifications || [])];
+
+                await delay(jitter());
+                await anchorVerification(ver);    // also exposed as window.vpAnchorVerification
+                saveState();
+
+                if (window.loadRecentTests) loadRecentTests();
+                if (window.updateOrdersNavNTBadge) updateOrdersNavNTBadge();
+                if (window.loadOrders && document.getElementById('ordersSection')?.style.display !== 'none') loadOrders();
+
+                if (window.showNotification) {
+                  showNotification('success', 'Seeded', 'NaturalDetect verification completed (demo).');
+                  showNotification('info', 'Blockchain', 'Verification hash anchored to DemoChain.');
+                }
+                } catch(e) {
+                  console.error('Scenario B failed:', e);
+                }
+              };
+            }
           }
 
           // Make sure the toolbar appears once the sidebar header exists (after login)
